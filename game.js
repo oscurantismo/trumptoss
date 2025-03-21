@@ -40,16 +40,16 @@ function preload() {
 }
 
 function create() {
-    // Calculate scale to make Trump 60vh tall with proper proportions
-    const targetHeight = this.scale.height * 0.6;
+// Calculate scale based on original trump.png height
+const targetHeight = this.scale.height * 0.6;
+const originalTrumpImage = this.textures.get('trump').getSourceImage();
+const trumpScale = targetHeight / originalTrumpImage.height;
 
-    const originalTrump = this.textures.get('trump').getSourceImage();
-    const trumpScale = targetHeight / originalTrump.height;
+// Add Trump image using calculated scale
+trump = this.add.image(this.scale.width / 2, this.scale.height / 2, trumpOriginalTexture)
+    .setScale(trumpScale)
+    .setOrigin(0.5);
 
-    // Add and scale Trump
-    trump = this.add.image(this.scale.width / 2, this.scale.height / 2, trumpOriginalTexture)
-        .setScale(trumpScale)
-        .setOrigin(0.5);
 
     // Add punch counter
     punchesText = this.add.text(20, 20, "Punches: 0", {
