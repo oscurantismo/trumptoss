@@ -59,18 +59,18 @@ function create() {
     this.input.setDefaultCursor("none");
     shoeCursor = this.add.image(0, 0, "shoe").setScale(0.5).setDepth(1);
 
-    // Add sound toggle button in top-right corner
-    const iconSize = 48;
-    soundButton = this.add.image(this.scale.width - iconSize - 20, 20 + iconSize / 2, "sound_on")
-        .setInteractive()
-        .setScrollFactor(0)
-        .setScale(0.8)
-        .setOrigin(0.5);
-
-    soundButton.on("pointerdown", () => {
+// Add sound toggle button in top-right corner
+const iconSize = 48;
+soundButton = this.add.image(this.scale.width - iconSize - 20, 20 + iconSize / 2, "sound_on")
+    .setInteractive()
+    .setScrollFactor(0)
+    .setScale(0.8)
+    .setOrigin(0.5)
+    .on('pointerdown', () => {
         soundEnabled = !soundEnabled;
         soundButton.setTexture(soundEnabled ? "sound_on" : "sound_off");
     });
+
 }
 
 function update() {
