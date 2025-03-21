@@ -40,16 +40,16 @@ function preload() {
 }
 
 function create() {
-// Calculate scale based on original trump.png height
+// Calculate scale to make Trump 60vh tall with proper proportions
 const targetHeight = this.scale.height * 0.6;
+
 const originalTrumpImage = this.textures.get('trump').getSourceImage();
 const trumpScale = targetHeight / originalTrumpImage.height;
 
-// Add Trump image using calculated scale
+// Add Trump in the center with calculated scale
 trump = this.add.image(this.scale.width / 2, this.scale.height / 2, trumpOriginalTexture)
     .setScale(trumpScale)
     .setOrigin(0.5);
-
 
     // Add punch counter
     punchesText = this.add.text(20, 20, "Punches: 0", {
@@ -98,14 +98,16 @@ function update() {
                 randomSound.play();
             }
 
-            if (!hitCooldown) {
-                hitCooldown = true;
-                trump.setTexture(trumpHitTexture);
-                setTimeout(() => {
-                    trump.setTexture(trumpOriginalTexture);
-                    hitCooldown = false;
-                }, 200);
-            }
+if (!hitCooldown) {
+    hitCooldown = true;
+    trump.setTexture(trumpHitTexture); // Reuses the same scale
+
+    setTimeout(() => {
+        trump.setTexture(trumpOriginalTexture);
+        hitCooldown = false;
+    }, 200);
+}
+
         }
     }
 
