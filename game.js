@@ -40,11 +40,18 @@ function preload() {
 }
 
 function create() {
-    // Centered Trump
-    trump = this.add.image(this.scale.width / 2, this.scale.height / 2, trumpOriginalTexture).setScale(0.8);
-    trump.setOrigin(0.5);
+    // Calculate scale to make Trump 60vh tall with proper proportions
+    const targetHeight = this.scale.height * 0.6;
 
-    // Punch counter
+    const originalTrump = this.textures.get('trump').getSourceImage();
+    const trumpScale = targetHeight / originalTrump.height;
+
+    // Add and scale Trump
+    trump = this.add.image(this.scale.width / 2, this.scale.height / 2, trumpOriginalTexture)
+        .setScale(trumpScale)
+        .setOrigin(0.5);
+
+    // Add punch counter
     punchesText = this.add.text(20, 20, "Punches: 0", {
         fontSize: Math.round(this.scale.width * 0.05) + "px",
         fill: "#000"
@@ -55,22 +62,21 @@ function create() {
         punchSounds.push(this.sound.add("punch" + i));
     }
 
-    // Hide cursor and show shoe
+    // Add custom shoe cursor
     this.input.setDefaultCursor("none");
     shoeCursor = this.add.image(0, 0, "shoe").setScale(0.5).setDepth(1);
 
-// Add sound toggle button in top-right corner
-const iconSize = 48;
-soundButton = this.add.image(this.scale.width - iconSize - 20, 20 + iconSize / 2, "sound_on")
-    .setInteractive()
-    .setScrollFactor(0)
-    .setScale(0.8)
-    .setOrigin(0.5)
-    .on('pointerdown', () => {
+    // Add sound toggle button, fixed 50x50 px
+    const iconSize = 50;
+    soundButton = this.add.image(this.scale.width - iconSize / 2 - 20, iconSize / 2 + 20, "sound_on")
+        .setInteractive()
+        .setDisplaySize(iconSize, iconSize)
+        .setOrigin(0.5);
+
+    soundButton.on("pointerdown", () => {
         soundEnabled = !soundEnabled;
         soundButton.setTexture(soundEnabled ? "sound_on" : "sound_off");
     });
-
 }
 
 function update() {
