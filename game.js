@@ -91,14 +91,13 @@ leaderboardButton = this.add.text(20, 80, "🏆 Leaderboard", {
 }).setInteractive();
 
 leaderboardButton.on("pointerdown", () => {
-    if (typeof TelegramGameProxy !== "undefined") {
+    if (typeof TelegramGameProxy !== "undefined" && TelegramGameProxy.postEvent) {
         TelegramGameProxy.postEvent("share_score");
-    } else if (typeof Telegram !== "undefined" && Telegram.WebApp) {
-        Telegram.WebApp.sendData(JSON.stringify({ event: "share_score" }));
     } else {
-        alert("Leaderboards can only be viewed inside Telegram.");
+        alert("🏆 Leaderboards can only be viewed inside Telegram.");
     }
 });
+
 
 }
 
