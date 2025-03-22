@@ -16,6 +16,10 @@ else:
 GAME_SHORT_NAME = "TrumpToss"
 GAME_URL = "https://oscurantismo.github.io/trumptoss/"  # Your actual GitHub Pages link
 
+def main():
+    updater = Updater(BOT_TOKEN, use_context=True)
+    dp = updater.dispatcher
+
 # /start or /play handler
 def start(update: Update, context: CallbackContext):
     keyboard = [
@@ -42,12 +46,14 @@ def start(update: Update, context: CallbackContext):
         reply_markup=reply_markup
     )
 
+
 def show_leaderboard(update: Update, context: CallbackContext):
     query = update.callback_query
     context.bot.send_message(
         chat_id=query.message.chat_id,
         text="Tap the 'Play' button again and hit 🏆 Leaderboard to view your score in Telegram!"
     )
+    
     context.bot.answer_callback_query(callback_query_id=query.id)
 dp.add_handler(CallbackQueryHandler(show_leaderboard, pattern="leaderboard"))
 
