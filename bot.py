@@ -55,12 +55,10 @@ def game_callback(update: Update, context: CallbackContext):
         )
 
 # /status command
-
 def status(update: Update, context: CallbackContext):
     update.message.reply_text("✅ TrumpToss bot is online and running!")
 
 # Set bot's visible description in the profile
-
 def set_bot_status(bot):
     try:
         bot.set_my_description("🟢 Online – TrumpToss bot is running!")
@@ -68,20 +66,21 @@ def set_bot_status(bot):
     except Exception as e:
         print("❌ Failed to set bot description:", e)
 
+# Handle errors gracefully
+def error_handler(update, context):
+    print(f"❌ Error: {context.error}")
+
 def main():
     updater = Updater(BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
 
-    set_bot_status(updater.bot)  # Set the bot's profile description
+    set_bot_status(updater.bot)
 
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("status", status))
-    dp.add_handler(CallbackQueryHandler(game_callback))  # Handles game URL launch
-    dp.add_handler(CallbackQueryHandler(show_leaderboard, pattern="leaderboard"))  # Handles leaderboard button
+    dp.add_handler(CallbackQueryHandler(game_callback))
+    dp.add_handler(CallbackQueryHandler(show_leaderboard, pattern="leaderboard"))
 
-def error_handler(update, context):
-    print(f"❌ Error: {context.error}")
-    
     dp.add_error_handler(error_handler)
 
     updater.start_polling()
