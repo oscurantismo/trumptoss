@@ -16,7 +16,7 @@ else:
 # Configuration
 GAME_SHORT_NAME = "TrumpToss"
 GAME_URL = "https://oscurantismo.github.io/trumptoss/"
-LEADERBOARD_API = "https://trumptossleaderboard-production.up.railway.app/leaderboard"
+LEADERBOARD_API = "https://trumptossleaderboard-production.up.railway.app/leaderboard-page"
 
 
 # Logging setup
