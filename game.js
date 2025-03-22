@@ -29,7 +29,7 @@ let trumpHitTexture = "trump_hit";
 let hitCooldown = false;
 let soundEnabled = true;
 let soundButton;
-let leaderboardPanel;
+let leaderboardPanel, leaderboardIframe;
 
 function preload() {
     this.load.image("trump", "trump.png");
@@ -91,10 +91,50 @@ function create() {
     }).setInteractive();
 
     leaderboardButton.on("pointerdown", () => {
-        window.open("https://trumptossleaderboard-production.up.railway.app/leaderboard-page", "_blank");
+        showEmbeddedLeaderboard(this);
     });
 
     trump.on("pointerdown", () => handlePunch());
+}
+
+function showEmbeddedLeaderboard(scene) {
+    leaderboardPanel = scene.add.rectangle(scene.scale.width / 2, scene.scale.height / 2, scene.scale.width, scene.scale.height, 0xffffff)
+        .setOrigin(0.5)
+        .setDepth(2000);
+
+    const domContainer = document.createElement("div");
+    domContainer.id = "leaderboard-container";
+    domContainer.style.position = "absolute";
+    domContainer.style.top = "0";
+    domContainer.style.left = "0";
+    domContainer.style.width = "100%";
+    domContainer.style.height = "100%";
+    domContainer.style.zIndex = "1000";
+    domContainer.style.backgroundColor = "rgba(255, 255, 255, 0.98)";
+
+    leaderboardIframe = document.createElement("iframe");
+    leaderboardIframe.src = "https://trumptossleaderboard-production.up.railway.app/leaderboard-page";
+    leaderboardIframe.style.width = "100%";
+    leaderboardIframe.style.height = "90%";
+    leaderboardIframe.style.border = "none";
+
+    const closeBtn = document.createElement("button");
+    closeBtn.innerText = "✖ Close";
+    closeBtn.style.width = "100%";
+    closeBtn.style.height = "10%";
+    closeBtn.style.border = "none";
+    closeBtn.style.fontSize = "1.2em";
+    closeBtn.style.cursor = "pointer";
+    closeBtn.style.background = "#eee";
+
+    closeBtn.onclick = () => {
+        domContainer.remove();
+        leaderboardPanel.destroy();
+    };
+
+    domContainer.appendChild(leaderboardIframe);
+    domContainer.appendChild(closeBtn);
+    document.body.appendChild(domContainer);
 }
 
 function handlePunch() {
