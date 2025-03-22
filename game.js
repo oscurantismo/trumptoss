@@ -170,15 +170,24 @@ function handlePunch() {
         }, 200);
     }
 
-    console.log("Submitting score:", punches);
+    const username = typeof Telegram !== "undefined" && Telegram.WebApp?.initDataUnsafe?.user?.username
+        ? Telegram.WebApp.initDataUnsafe.user.username
+        : "Anonymous";
+
+    console.log("Submitting score:", punches, "as", username);
 
     fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            username: Telegram.WebApp.initDataUnsafe.user?.username || "Anonymous",
-            score: punches
-        })
+        body: JSON.stringify({ username, score: punches })
+    })
+    .then(res => {
+        if (!res.ok) {
+            console.error("❌ Submission failed:", res.status);
+        }
+    })
+    .catch(err => {
+        console.error("❌ Error submitting score:", err);
     });
 }
 
