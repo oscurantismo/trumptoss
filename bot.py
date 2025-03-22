@@ -42,6 +42,15 @@ def start(update: Update, context: CallbackContext):
         reply_markup=reply_markup
     )
 
+def show_leaderboard(update: Update, context: CallbackContext):
+    query = update.callback_query
+    context.bot.send_message(
+        chat_id=query.message.chat_id,
+        text="Tap the 'Play' button again and hit 🏆 Leaderboard to view your score in Telegram!"
+    )
+    context.bot.answer_callback_query(callback_query_id=query.id)
+dp.add_handler(CallbackQueryHandler(show_leaderboard, pattern="leaderboard"))
+
 
 # Respond to the callback query by giving Telegram the game URL
 def game_callback(update: Update, context: CallbackContext):
