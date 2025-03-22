@@ -36,10 +36,10 @@ def start(update: Update, context: CallbackContext):
 # Leaderboard button handler – only triggers embedded display in-game
 def show_leaderboard(update: Update, context: CallbackContext):
     query = update.callback_query
-
     context.bot.answer_callback_query(
         callback_query_id=query.id,
-        text="📊 Tap the 🏆 button inside the game to view the leaderboard!"
+        text="📊 Tap the 🏆 button inside the game to view the leaderboard!",
+        show_alert=False
     )
 
 # Game launch handler
@@ -79,7 +79,7 @@ def main():
 
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("status", status))
-    dp.add_handler(CallbackQueryHandler(game_callback))
+    dp.add_handler(CallbackQueryHandler(game_callback, pattern=f"^{GAME_SHORT_NAME}$"))
     dp.add_handler(CallbackQueryHandler(show_leaderboard, pattern="leaderboard"))
     dp.add_error_handler(error_handler)
 
