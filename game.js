@@ -54,7 +54,7 @@ function create() {
     trump = this.add.image(this.scale.width / 2, this.scale.height / 2, trumpOriginalTexture)
         .setScale(trumpScale)
         .setOrigin(0.5)
-        .setInteractive();
+        .setInteractive({ useHandCursor: true });
 
     punchesText = this.add.text(20, 20, "Punches: " + punches, {
         fontSize: Math.round(this.scale.width * 0.05) + "px",
@@ -65,7 +65,6 @@ function create() {
         punchSounds.push(this.sound.add("punch" + i));
     }
 
-    // Hide default cursor and show shoe sprite
     this.input.setDefaultCursor("none");
     shoeCursor = this.add.image(this.input.activePointer.x, this.input.activePointer.y, "shoe")
         .setScale(0.5)
@@ -103,34 +102,36 @@ function create() {
             .catch(() => alert("Failed to load leaderboard."));
     });
 
-    // Add input event listener on trump
-    trump.on("pointerdown", () => {
-        punches++;
-        punchesText.setText("Punches: " + punches);
-        localStorage.setItem("punches", punches);
+    // Enable punch on both click and tap
+    trump.on("pointerdown", () => handlePunch());
+}
 
-        if (soundEnabled) {
-            const randomSound = Phaser.Math.RND.pick(punchSounds);
-            randomSound.play();
-        }
+function handlePunch() {
+    punches++;
+    punchesText.setText("Punches: " + punches);
+    localStorage.setItem("punches", punches);
 
-        if (!hitCooldown) {
-            hitCooldown = true;
-            trump.setTexture(trumpHitTexture);
-            setTimeout(() => {
-                trump.setTexture(trumpOriginalTexture);
-                hitCooldown = false;
-            }, 200);
-        }
+    if (soundEnabled) {
+        const randomSound = Phaser.Math.RND.pick(punchSounds);
+        randomSound.play();
+    }
 
-        fetch("https://web-production-5454.up.railway.app/submit", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                username: Telegram.WebApp.initDataUnsafe.user?.username || "Anonymous",
-                score: punches
-            })
-        });
+    if (!hitCooldown) {
+        hitCooldown = true;
+        trump.setTexture(trumpHitTexture);
+        setTimeout(() => {
+            trump.setTexture(trumpOriginalTexture);
+            hitCooldown = false;
+        }, 200);
+    }
+
+    fetch("https://web-production-5454.up.railway.app/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            username: Telegram.WebApp.initDataUnsafe.user?.username || "Anonymous",
+            score: punches
+        })
     });
 }
 
