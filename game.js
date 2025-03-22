@@ -170,16 +170,30 @@ function handlePunch() {
         }, 200);
     }
 
+    // ✅ Safely try to extract Telegram username
     let username = "Anonymous";
+
     try {
-        if (typeof Telegram !== "undefined" && Telegram.WebApp?.initDataUnsafe?.user?.username) {
+        console.log("Telegram object:", Telegram);
+        if (Telegram?.WebApp?.initDataUnsafe?.user?.username) {
             username = Telegram.WebApp.initDataUnsafe.user.username;
+            console.log("✅ Username fetched from Telegram:", username);
+        } else {
+            console.warn("⚠️ Telegram WebApp username not available.");
+            const input = prompt("Enter your name for the leaderboard:");
+            if (input && input.trim().length > 0) {
+                username = input.trim();
+            }
         }
     } catch (e) {
-        console.warn("⚠️ Could not retrieve Telegram username");
+        console.error("❌ Error accessing Telegram username:", e);
+        const input = prompt("Enter your name for the leaderboard:");
+        if (input && input.trim().length > 0) {
+            username = input.trim();
+        }
     }
 
-    console.log("Submitting score:", punches, "as", username);
+    console.log("📤 Submitting score:", punches, "as", username);
 
     fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
         method: "POST",
@@ -194,6 +208,8 @@ function handlePunch() {
     .catch(err => {
         console.error("❌ Error submitting score:", err);
     });
+}
+
 }
 
 function update() {
