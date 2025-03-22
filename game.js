@@ -22,13 +22,14 @@ window.onload = () => {
     game = new Phaser.Game(gameConfig);
 };
 
-let trump, shoeCursor, punchesText, leaderboardButton;
+let trump, shoeCursor, punchesText, leaderboardButton, closeLeaderboardButton;
 let punchSounds = [];
 let trumpOriginalTexture = "trump";
 let trumpHitTexture = "trump_hit";
 let hitCooldown = false;
 let soundEnabled = true;
 let soundButton;
+let leaderboardPanel;
 
 function preload() {
     this.load.image("trump", "trump.png");
@@ -90,19 +91,9 @@ function create() {
     }).setInteractive();
 
     leaderboardButton.on("pointerdown", () => {
-        fetch("https://trumptossleaderboard-production.up.railway.app/leaderboard")
-            .then(res => res.json())
-            .then(data => {
-                const text = data.map((entry, i) =>
-                    `${i + 1}. ${entry.username}: ${entry.score}`
-                ).join("\n");
-
-                alert("🏆 Top Players:\n\n" + text);
-            })
-            .catch(() => alert("Failed to load leaderboard."));
+        window.open("https://trumptossleaderboard-production.up.railway.app/leaderboard-page", "_blank");
     });
 
-    // Enable punch on both click and tap
     trump.on("pointerdown", () => handlePunch());
 }
 
