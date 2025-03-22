@@ -2,24 +2,8 @@
 
 let game;
 let punches = 0;
-let username = "Anonymous"; // Default
 
 window.onload = () => {
-    try {
-        if (
-            typeof Telegram !== "undefined" &&
-            Telegram.WebApp?.initDataUnsafe?.user?.username
-        ) {
-            username = Telegram.WebApp.initDataUnsafe.user.username;
-        } else {
-            console.warn("Telegram username not found, using Anonymous");
-        }
-    } catch (err) {
-        console.error("Telegram init failed:", err);
-    }
-
-    console.log("🎮 Game loading as user:", username);
-
     const width = window.innerWidth;
     const height = window.innerHeight;
 
@@ -38,7 +22,7 @@ window.onload = () => {
     game = new Phaser.Game(gameConfig);
 };
 
-let trump, shoeCursor, punchesText, leaderboardButton, closeLeaderboardButton;
+let trump, shoeCursor, punchesText, leaderboardButton;
 let punchSounds = [];
 let trumpOriginalTexture = "trump";
 let trumpHitTexture = "trump_hit";
@@ -113,36 +97,6 @@ function create() {
     trump.on("pointerdown", () => handlePunch());
 }
 
-function handlePunch() {
-    punches++;
-    punchesText.setText("Punches: " + punches);
-    localStorage.setItem("punches", punches);
-
-    if (soundEnabled) {
-        const randomSound = Phaser.Math.RND.pick(punchSounds);
-        randomSound.play();
-    }
-
-    if (!hitCooldown) {
-        hitCooldown = true;
-        trump.setTexture(trumpHitTexture);
-        setTimeout(() => {
-            trump.setTexture(trumpOriginalTexture);
-            hitCooldown = false;
-        }, 200);
-    }
-
-    console.log("Submitting score:", punches, "as", username);
-
-    fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, score: punches })
-    }).catch(err => {
-        console.error("❌ Error submitting score:", err);
-    });
-}
-
 function showEmbeddedLeaderboard(scene) {
     leaderboardPanel = scene.add.rectangle(scene.scale.width / 2, scene.scale.height / 2, scene.scale.width, scene.scale.height, 0xffffff)
         .setOrigin(0.5)
@@ -195,6 +149,51 @@ function showEmbeddedLeaderboard(scene) {
     domContainer.appendChild(reloadBtn);
     domContainer.appendChild(closeBtn);
     document.body.appendChild(domContainer);
+}
+
+function handlePunch() {
+    punches++;
+    punchesText.setText("Punches: " + punches);
+    localStorage.setItem("punches", punches);
+
+    if (soundEnabled) {
+        const randomSound = Phaser.Math.RND.pick(punchSounds);
+        randomSound.play();
+    }
+
+    if (!hitCooldown) {
+        hitCooldown = true;
+        trump.setTexture(trumpHitTexture);
+        setTimeout(() => {
+            trump.setTexture(trumpOriginalTexture);
+            hitCooldown = false;
+        }, 200);
+    }
+
+    let username = "Anonymous";
+    try {
+        if (typeof Telegram !== "undefined" && Telegram.WebApp?.initDataUnsafe?.user?.username) {
+            username = Telegram.WebApp.initDataUnsafe.user.username;
+        }
+    } catch (e) {
+        console.warn("Telegram username not found:", e);
+    }
+
+    console.log("Submitting score:", punches, "as", username);
+
+    fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, score: punches })
+    })
+    .then(res => {
+        if (!res.ok) {
+            console.error("❌ Submission failed:", res.status);
+        }
+    })
+    .catch(err => {
+        console.error("❌ Error submitting score:", err);
+    });
 }
 
 function update() {
