@@ -170,6 +170,8 @@ function handlePunch() {
         }, 200);
     }
 
+    console.log("Submitting score:", punches);
+
     fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -178,6 +180,7 @@ function handlePunch() {
             score: punches
         })
     });
+
 }
 
 function update() {
