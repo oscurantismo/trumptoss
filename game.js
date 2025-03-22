@@ -43,6 +43,16 @@ function preload() {
     }
 }
 
+fetch("https://web-production-5454.up.railway.app/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+        username: Telegram.WebApp.initDataUnsafe.user.username || "Anonymous",
+        score: punches
+    })
+});
+
+
 function create() {
     // Load saved score
     const savedScore = localStorage.getItem("punches");
@@ -90,14 +100,19 @@ function create() {
         borderRadius: 5
     }).setInteractive();
 
-    leaderboardButton.on("pointerdown", () => {
-        console.log("Trying to open leaderboard...");
-        if (typeof TelegramGameProxy !== "undefined" && TelegramGameProxy.postEvent) {
-            TelegramGameProxy.postEvent("share_score");
-        } else {
-            alert("🏆 Leaderboards can only be viewed inside Telegram.");
-        }
-    });
+leaderboardButton.on("pointerdown", () => {
+    fetch("https://web-production-5454.up.railway.app/leaderboard")
+        .then(res => res.json())
+        .then(data => {
+            const text = data.map((entry, i) =>
+                `${i + 1}. ${entry.username}: ${entry.score}`
+            ).join("\\n");
+
+            alert("🏆 Top Players:\\n\\n" + text);
+        })
+        .catch(() => alert("Failed to load leaderboard."));
+});
+
 }
 
 function update() {
