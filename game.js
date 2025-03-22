@@ -184,11 +184,14 @@ function handlePunch() {
     .then(res => {
         if (!res.ok) {
             console.error("❌ Submission failed:", res.status);
+        } else {
+            console.log("✅ Score submitted");
         }
     })
     .catch(err => {
         console.error("❌ Error submitting score:", err);
     });
+
 }
 
 function update() {
