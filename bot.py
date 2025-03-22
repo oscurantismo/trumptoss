@@ -3,7 +3,13 @@ import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 
-BOT_TOKEN = os.getenv("7367663755:AAHKHWhP5PMxBKUlhEgv1IiKi8iQhRKBWus")  # Railway will inject this token
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+if not BOT_TOKEN:
+    print("❌ BOT_TOKEN not received!")
+    exit()
+else:
+    print("✅ BOT_TOKEN received.")
 
 
 GAME_SHORT_NAME = "TrumpToss"
