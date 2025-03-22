@@ -4,7 +4,7 @@ from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, Callback
 
 BOT_TOKEN = "7998134637:AAFAm8jl483eovZoS8dMkfMpDKlCqqc1KAc"
 GAME_SHORT_NAME = "trumptest"
-GAME_URL = "https://oscurantismo.github.io/telegram-native-test"  # path to your test game folder
+GAME_URL = "https://oscurantismo.github.io/trumptoss/telegram-native-test"  # path to your test game folder
 
 def start(update: Update, context: CallbackContext):
     keyboard = [
