@@ -1,4 +1,5 @@
 import os
+import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 
@@ -12,6 +13,8 @@ else:
 
 GAME_SHORT_NAME = "TrumpToss"
 GAME_URL = "https://oscurantismo.github.io/trumptoss/"  # Your GitHub Pages game link
+
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 # /start handler with "Play" and "Leaderboard" buttons
 def start(update: Update, context: CallbackContext):
@@ -75,6 +78,11 @@ def main():
     dp.add_handler(CommandHandler("status", status))
     dp.add_handler(CallbackQueryHandler(game_callback))  # Handles game URL launch
     dp.add_handler(CallbackQueryHandler(show_leaderboard, pattern="leaderboard"))  # Handles leaderboard button
+
+    def error_handler(update, context):
+    print(f"❌ Error: {context.error}")
+    
+    dp.add_error_handler(error_handler)
 
     updater.start_polling()
     print("✅ Bot is running...")
