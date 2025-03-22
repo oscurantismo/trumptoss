@@ -90,7 +90,7 @@ function create() {
     }).setInteractive();
 
     leaderboardButton.on("pointerdown", () => {
-        fetch("https://web-production-5454.up.railway.app/leaderboard")
+        fetch("https://trumptossleaderboard-production.up.railway.app/leaderboard")
             .then(res => res.json())
             .then(data => {
                 const text = data.map((entry, i) =>
@@ -125,7 +125,7 @@ function handlePunch() {
         }, 200);
     }
 
-    fetch("https://web-production-5454.up.railway.app/submit", {
+    fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
