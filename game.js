@@ -1,4 +1,7 @@
+// === game.js ===
+
 let game;
+let punches = 0;
 
 window.onload = () => {
     const width = window.innerWidth;
@@ -19,7 +22,7 @@ window.onload = () => {
     game = new Phaser.Game(gameConfig);
 };
 
-let trump, shoeCursor, punches = 0, punchesText;
+let trump, shoeCursor, punchesText, leaderboardButton;
 let punchSounds = [];
 let trumpOriginalTexture = "trump";
 let trumpHitTexture = "trump_hit";
@@ -31,8 +34,9 @@ function preload() {
     this.load.image("trump", "trump.png");
     this.load.image("trump_hit", "trump_hit.png");
     this.load.image("shoe", "shoe.png");
-    this.load.image("sound_on", "sound_on.png");   // Add a speaker icon
-    this.load.image("sound_off", "sound_off.png"); // Add a muted speaker icon
+    this.load.image("sound_on", "sound_on.png");
+    this.load.image("sound_off", "sound_off.png");
+    this.load.image("leaderboard_btn", "leaderboard_btn.png");
 
     for (let i = 1; i <= 4; i++) {
         this.load.audio("punch" + i, `punch${i}.mp3`);
@@ -40,33 +44,32 @@ function preload() {
 }
 
 function create() {
-// Calculate scale to make Trump 60vh tall with proper proportions
-const targetHeight = this.scale.height * 0.6;
+    // Load saved score
+    const savedScore = localStorage.getItem("punches");
+    if (savedScore !== null) punches = parseInt(savedScore);
 
-const originalTrumpImage = this.textures.get('trump').getSourceImage();
-const trumpScale = targetHeight / originalTrumpImage.height;
+    // Scale to 60vh with aspect ratio
+    const targetHeight = this.scale.height * 0.6;
+    const originalTrumpImage = this.textures.get("trump").getSourceImage();
+    const trumpScale = targetHeight / originalTrumpImage.height;
 
-// Add Trump in the center with calculated scale
-trump = this.add.image(this.scale.width / 2, this.scale.height / 2, trumpOriginalTexture)
-    .setScale(trumpScale)
-    .setOrigin(0.5);
+    trump = this.add.image(this.scale.width / 2, this.scale.height / 2, trumpOriginalTexture)
+        .setScale(trumpScale)
+        .setOrigin(0.5);
 
-    // Add punch counter
-    punchesText = this.add.text(20, 20, "Punches: 0", {
+    punchesText = this.add.text(20, 20, "Punches: " + punches, {
         fontSize: Math.round(this.scale.width * 0.05) + "px",
         fill: "#000"
     });
 
-    // Load punch sounds
     for (let i = 1; i <= 4; i++) {
         punchSounds.push(this.sound.add("punch" + i));
     }
 
-    // Add custom shoe cursor
     this.input.setDefaultCursor("none");
     shoeCursor = this.add.image(0, 0, "shoe").setScale(0.5).setDepth(1);
 
-    // Add sound toggle button, fixed 50x50 px
+    // Sound toggle button
     const iconSize = 50;
     soundButton = this.add.image(this.scale.width - iconSize / 2 - 20, iconSize / 2 + 20, "sound_on")
         .setInteractive()
@@ -76,6 +79,23 @@ trump = this.add.image(this.scale.width / 2, this.scale.height / 2, trumpOrigina
     soundButton.on("pointerdown", () => {
         soundEnabled = !soundEnabled;
         soundButton.setTexture(soundEnabled ? "sound_on" : "sound_off");
+    });
+
+    // Leaderboard button (top-left)
+    leaderboardButton = this.add.text(20, 80, "🏆 Leaderboard", {
+        fontSize: Math.round(this.scale.width * 0.045) + "px",
+        fill: "#0077cc",
+        backgroundColor: "#eee",
+        padding: { left: 10, right: 10, top: 5, bottom: 5 },
+        borderRadius: 5
+    }).setInteractive();
+
+    leaderboardButton.on("pointerdown", () => {
+        if (window.TelegramGameProxy) {
+            TelegramGameProxy.postEvent("share_score");
+        } else {
+            alert("Leaderboard is only available in Telegram.");
+        }
     });
 }
 
@@ -91,32 +111,26 @@ function update() {
         if (Phaser.Geom.Rectangle.Contains(bounds, pointer.x, pointer.y)) {
             punches++;
             punchesText.setText("Punches: " + punches);
+            localStorage.setItem("punches", punches); // Save score persistently
 
-            // Play punch sound if sound is on
             if (soundEnabled) {
                 const randomSound = Phaser.Math.RND.pick(punchSounds);
                 randomSound.play();
             }
 
-if (!hitCooldown) {
-    hitCooldown = true;
-    trump.setTexture(trumpHitTexture); // Reuses the same scale
+            if (!hitCooldown) {
+                hitCooldown = true;
+                trump.setTexture(trumpHitTexture);
+                setTimeout(() => {
+                    trump.setTexture(trumpOriginalTexture);
+                    hitCooldown = false;
+                }, 200);
+            }
 
-    setTimeout(() => {
-        trump.setTexture(trumpOriginalTexture);
-        hitCooldown = false;
-    }, 200);
-}
-
-            function sendScore(score) {
-    if (window.TelegramGameProxy) {
-        TelegramGameProxy.postEvent("score", score);
-    } else {
-        console.warn("TelegramGameProxy not found.");
-    }
-}
-
-
+            // Send score to Telegram
+            if (window.TelegramGameProxy) {
+                TelegramGameProxy.postEvent("score", punches);
+            }
         }
     }
 
