@@ -180,7 +180,6 @@ function handlePunch() {
             score: punches
         })
     });
-
 }
 
 function update() {
