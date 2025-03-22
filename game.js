@@ -81,24 +81,23 @@ function create() {
         soundButton.setTexture(soundEnabled ? "sound_on" : "sound_off");
     });
 
-// Leaderboard button (top-left)
-leaderboardButton = this.add.text(20, 80, "🏆 Leaderboard", {
-    fontSize: Math.round(this.scale.width * 0.045) + "px",
-    fill: "#0077cc",
-    backgroundColor: "#eee",
-    padding: { left: 10, right: 10, top: 5, bottom: 5 },
-    borderRadius: 5
-}).setInteractive();
+    // Leaderboard button (top-left)
+    leaderboardButton = this.add.text(20, 80, "🏆 Leaderboard", {
+        fontSize: Math.round(this.scale.width * 0.045) + "px",
+        fill: "#0077cc",
+        backgroundColor: "#eee",
+        padding: { left: 10, right: 10, top: 5, bottom: 5 },
+        borderRadius: 5
+    }).setInteractive();
 
-leaderboardButton.on("pointerdown", () => {
-    if (typeof TelegramGameProxy !== "undefined" && TelegramGameProxy.postEvent) {
-        TelegramGameProxy.postEvent("share_score");
-    } else {
-        alert("🏆 Leaderboards can only be viewed inside Telegram.");
-    }
-});
-
-
+    leaderboardButton.on("pointerdown", () => {
+        console.log("Trying to open leaderboard...");
+        if (typeof TelegramGameProxy !== "undefined" && TelegramGameProxy.postEvent) {
+            TelegramGameProxy.postEvent("share_score");
+        } else {
+            alert("🏆 Leaderboards can only be viewed inside Telegram.");
+        }
+    });
 }
 
 function update() {
@@ -130,7 +129,8 @@ function update() {
             }
 
             // Send score to Telegram
-            if (window.TelegramGameProxy) {
+            if (typeof TelegramGameProxy !== "undefined" && TelegramGameProxy.postEvent) {
+                console.log("Sending score to Telegram:", punches);
                 TelegramGameProxy.postEvent("score", punches);
             }
         }
