@@ -1,6 +1,7 @@
 import os
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -27,6 +28,20 @@ def start(update: Update, context: CallbackContext):
         game_short_name=GAME_SHORT_NAME,
         reply_markup=reply_markup
     )
+
+def start(update: Update, context: CallbackContext):
+    keyboard = [
+        [InlineKeyboardButton("👉 Play TrumpToss", callback_game={"game_short_name": GAME_SHORT_NAME})],
+        [InlineKeyboardButton("🏆 See Leaderboard", callback_data="leaderboard")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    context.bot.send_game(
+        chat_id=update.effective_chat.id,
+        game_short_name=GAME_SHORT_NAME,
+        reply_markup=reply_markup
+    )
+
 
 # Respond to the callback query by giving Telegram the game URL
 def game_callback(update: Update, context: CallbackContext):
