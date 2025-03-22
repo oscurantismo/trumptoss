@@ -1,6 +1,5 @@
 import os
 import logging
-import requests
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 
@@ -13,16 +12,14 @@ if not BOT_TOKEN:
 else:
     print("✅ BOT_TOKEN received.")
 
-# Configuration
+# Game configuration
 GAME_SHORT_NAME = "TrumpToss"
 GAME_URL = "https://oscurantismo.github.io/trumptoss/"
-LEADERBOARD_API = "https://trumptossleaderboard-production.up.railway.app/leaderboard-page"
-
 
 # Logging setup
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-# /start handler with game + leaderboard buttons
+# /start command with inline buttons
 def start(update: Update, context: CallbackContext):
     keyboard = [
         [InlineKeyboardButton("👉 Play TrumpToss", callback_game={"game_short_name": GAME_SHORT_NAME})],
@@ -36,30 +33,16 @@ def start(update: Update, context: CallbackContext):
         reply_markup=reply_markup
     )
 
-# Handles leaderboard button press
+# Leaderboard button handler – only triggers embedded display in-game
 def show_leaderboard(update: Update, context: CallbackContext):
     query = update.callback_query
-    try:
-        res = requests.get(LEADERBOARD_API)
-        res.raise_for_status()
-        leaderboard = res.json()
 
-        if not leaderboard:
-            message = "🏆 Leaderboard is empty. Be the first to score!"
-        else:
-            message = "🏆 Top Players:\n\n" + "\n".join(
-                [f"{i + 1}. {entry['username']}: {entry['score']}" for i, entry in enumerate(leaderboard)]
-            )
+    context.bot.answer_callback_query(
+        callback_query_id=query.id,
+        text="📊 Tap the 🏆 button inside the game to view the leaderboard!"
+    )
 
-        context.bot.send_message(chat_id=query.message.chat_id, text=message)
-        context.bot.answer_callback_query(callback_query_id=query.id)
-
-    except Exception as e:
-        context.bot.send_message(chat_id=query.message.chat_id, text="⚠️ Failed to load leaderboard.")
-        context.bot.answer_callback_query(callback_query_id=query.id)
-        print(f"❌ Error fetching leaderboard: {e}")
-
-# Game launch callback
+# Game launch handler
 def game_callback(update: Update, context: CallbackContext):
     query = update.callback_query
     if query.game_short_name == GAME_SHORT_NAME:
@@ -71,7 +54,7 @@ def game_callback(update: Update, context: CallbackContext):
 def status(update: Update, context: CallbackContext):
     update.message.reply_text("✅ TrumpToss bot is online and running!")
 
-# Sets profile description to 'Online'
+# Optional: update Telegram bot profile description
 def set_bot_status(bot):
     try:
         bot.set_my_description("🟢 Online – TrumpToss bot is running!")
@@ -79,7 +62,7 @@ def set_bot_status(bot):
     except Exception as e:
         print("❌ Failed to set bot description:", e)
 
-# Error logger
+# Error handling
 def error_handler(update, context):
     error_message = str(context.error)
     if "Query is too old" in error_message:
@@ -87,7 +70,7 @@ def error_handler(update, context):
     else:
         print(f"❌ Error: {context.error}")
 
-# Entry point
+# Start the bot
 def main():
     updater = Updater(BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
