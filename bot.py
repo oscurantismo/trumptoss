@@ -48,7 +48,6 @@ def game_callback(update: Update, context: CallbackContext):
             callback_query_id=query.id,
             url=GAME_URL
         )
-    
     else:
         context.bot.answer_callback_query(
             callback_query_id=query.id,
