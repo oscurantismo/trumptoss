@@ -16,7 +16,7 @@ else:
 # Configuration
 GAME_SHORT_NAME = "TrumpToss"
 GAME_URL = "https://oscurantismo.github.io/trumptoss/"
-LEADERBOARD_API = "https://web-production-5454.up.railway.app/leaderboard"  # Ensure trailing /leaderboard
+LEADERBOARD_API = "https://web-production-5454.up.railway.app/"  # Ensure trailing /leaderboard
 
 # Logging setup
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
