@@ -170,7 +170,6 @@ function handlePunch() {
         }, 200);
     }
 
-    // ✅ Safely try to extract Telegram username
     let username = "Anonymous";
 
     try {
@@ -208,8 +207,6 @@ function handlePunch() {
     .catch(err => {
         console.error("❌ Error submitting score:", err);
     });
-}
-
 }
 
 function update() {
