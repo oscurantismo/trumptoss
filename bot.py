@@ -68,7 +68,11 @@ def set_bot_status(bot):
 
 # Handle errors gracefully
 def error_handler(update, context):
-    print(f"❌ Error: {context.error}")
+    error_message = str(context.error)
+    if "Query is too old" in error_message:
+        print("⚠️ Stale callback query ignored.")
+    else:
+        print(f"❌ Error: {context.error}")
 
 def main():
     updater = Updater(BOT_TOKEN, use_context=True)
