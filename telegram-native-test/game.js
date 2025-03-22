@@ -90,8 +90,8 @@ function create() {
     }).setInteractive();
 
     leaderboardButton.on("pointerdown", () => {
-        if (typeof TelegramGameProxy !== "undefined") {
-            TelegramGameProxy.postEvent("leaderboard");
+        if (Telegram.WebApp && Telegram.WebApp.sendData) {
+            Telegram.WebApp.sendData(JSON.stringify({ event: "leaderboard" }));
         } else {
             alert("Leaderboard is only available in Telegram.");
         }
@@ -119,8 +119,8 @@ function handlePunch() {
         }, 200);
     }
 
-    if (typeof TelegramGameProxy !== "undefined") {
-        TelegramGameProxy.postEvent("score", punches);
+    if (Telegram.WebApp && Telegram.WebApp.sendData) {
+        Telegram.WebApp.sendData(JSON.stringify({ event: "score", value: punches }));
     }
 }
 
