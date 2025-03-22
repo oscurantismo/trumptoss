@@ -20,6 +20,14 @@ def main():
     updater = Updater(BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
 
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CallbackQueryHandler(game_callback))  # for launching game
+    dp.add_handler(CallbackQueryHandler(show_leaderboard, pattern="leaderboard"))  # new leaderboard button
+
+    updater.start_polling()
+    print("✅ Bot is running...")
+    updater.idle()
+
 # /start or /play handler
 def start(update: Update, context: CallbackContext):
     keyboard = [
