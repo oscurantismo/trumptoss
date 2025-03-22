@@ -48,11 +48,12 @@ if query.game_short_name == GAME_SHORT_NAME:
         callback_query_id=query.id,
         url=GAME_URL
     )
-    else:
-        context.bot.answer_callback_query(
-            callback_query_id=query.id,
-            text="Unknown game 🤔"
-        )
+    
+else:
+    context.bot.answer_callback_query(
+        callback_query_id=query.id,
+        text="Unknown game 🤔"
+    )
 
 # /status command
 def status(update: Update, context: CallbackContext):
