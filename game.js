@@ -170,9 +170,14 @@ function handlePunch() {
         }, 200);
     }
 
-    const username = typeof Telegram !== "undefined" && Telegram.WebApp?.initDataUnsafe?.user?.username
-        ? Telegram.WebApp.initDataUnsafe.user.username
-        : "Anonymous";
+    let username = "Anonymous";
+    try {
+        if (typeof Telegram !== "undefined" && Telegram.WebApp?.initDataUnsafe?.user?.username) {
+            username = Telegram.WebApp.initDataUnsafe.user.username;
+        }
+    } catch (e) {
+        console.warn("⚠️ Could not retrieve Telegram username");
+    }
 
     console.log("Submitting score:", punches, "as", username);
 
@@ -184,14 +189,11 @@ function handlePunch() {
     .then(res => {
         if (!res.ok) {
             console.error("❌ Submission failed:", res.status);
-        } else {
-            console.log("✅ Score submitted");
         }
     })
     .catch(err => {
         console.error("❌ Error submitting score:", err);
     });
-
 }
 
 function update() {
