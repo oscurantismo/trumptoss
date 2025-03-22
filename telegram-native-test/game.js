@@ -76,7 +76,7 @@ function create() {
         .setDisplaySize(iconSize, iconSize)
         .setOrigin(0.5);
 
-    soundButton.on("pointerdown", () => {
+    soundButton.on("pointerup", () => {
         soundEnabled = !soundEnabled;
         soundButton.setTexture(soundEnabled ? "sound_on" : "sound_off");
     });
@@ -89,11 +89,13 @@ function create() {
         borderRadius: 5
     }).setInteractive();
 
-    leaderboardButton.on("pointerdown", () => {
-        if (Telegram.WebApp && Telegram.WebApp.sendData) {
+    leaderboardButton.on("pointerup", () => {
+        if (typeof TelegramGameProxy !== "undefined") {
+            TelegramGameProxy.postEvent("leaderboard");
+        } else if (window.Telegram && Telegram.WebApp && Telegram.WebApp.sendData) {
             Telegram.WebApp.sendData(JSON.stringify({ event: "leaderboard" }));
         } else {
-            alert("Leaderboard is only available in Telegram.");
+            alert("Leaderboard is only available inside Telegram.");
         }
     });
 
@@ -119,8 +121,8 @@ function handlePunch() {
         }, 200);
     }
 
-    if (Telegram.WebApp && Telegram.WebApp.sendData) {
-        Telegram.WebApp.sendData(JSON.stringify({ event: "score", value: punches }));
+    if (typeof TelegramGameProxy !== "undefined") {
+        TelegramGameProxy.postEvent("score", punches);
     }
 }
 
