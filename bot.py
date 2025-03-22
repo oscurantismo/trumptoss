@@ -24,11 +24,11 @@ def start(update: Update, context: CallbackContext):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-context.bot.send_game(
-    chat_id=update.effective_chat.id,
-    game_short_name=GAME_SHORT_NAME,
-    reply_markup=reply_markup
-)
+    context.bot.send_game(
+        chat_id=update.effective_chat.id,
+        game_short_name=GAME_SHORT_NAME,
+        reply_markup=reply_markup
+    )
 
 # Handles leaderboard button press
 def show_leaderboard(update: Update, context: CallbackContext):
