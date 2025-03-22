@@ -1,5 +1,6 @@
 import os
 import logging
+import requests  # Required for API call to leaderboard backend
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 
@@ -13,6 +14,7 @@ else:
 
 GAME_SHORT_NAME = "TrumpToss"
 GAME_URL = "https://oscurantismo.github.io/trumptoss/"  # Your GitHub Pages game link
+LEADERBOARD_API = "https://web-production-5454.up.railway.app/"  # Replace with your actual Railway backend URL
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
@@ -33,11 +35,31 @@ def start(update: Update, context: CallbackContext):
 # Handles leaderboard button press
 def show_leaderboard(update: Update, context: CallbackContext):
     query = update.callback_query
-    context.bot.send_message(
-        chat_id=query.message.chat_id,
-        text="To see your position, tap the 🏆 Leaderboard button inside the game UI."
-    )
-    context.bot.answer_callback_query(callback_query_id=query.id)
+    try:
+        res = requests.get(LEADERBOARD_API)
+        res.raise_for_status()
+        leaderboard = res.json()
+
+        if not leaderboard:
+            message = "🏆 Leaderboard is empty. Be the first to score!"
+        else:
+            message = "🏆 Top Players:\n\n" + "\n".join(
+                [f"{i + 1}. {entry['username']}: {entry['score']}" for i, entry in enumerate(leaderboard)]
+            )
+
+        context.bot.send_message(
+            chat_id=query.message.chat_id,
+            text=message
+        )
+        context.bot.answer_callback_query(callback_query_id=query.id)
+
+    except Exception as e:
+        context.bot.send_message(
+            chat_id=query.message.chat_id,
+            text="⚠️ Failed to load leaderboard."
+        )
+        context.bot.answer_callback_query(callback_query_id=query.id)
+        print(f"❌ Error fetching leaderboard: {e}")
 
 # Respond to the callback query by giving Telegram the game URL
 def game_callback(update: Update, context: CallbackContext):
