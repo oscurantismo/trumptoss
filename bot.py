@@ -36,7 +36,7 @@ def show_leaderboard(update: Update, context: CallbackContext):
     )
     context.bot.answer_callback_query(callback_query_id=query.id)
 
-# Handles the Play button and sends the game URL
+# Respond to the callback query by giving Telegram the game URL
 def game_callback(update: Update, context: CallbackContext):
     query = update.callback_query
 
@@ -51,23 +51,34 @@ def game_callback(update: Update, context: CallbackContext):
             text="Unknown game 🤔"
         )
 
-# Main function to start bot
+# /status command
+
+def status(update: Update, context: CallbackContext):
+    update.message.reply_text("✅ TrumpToss bot is online and running!")
+
+# Set bot's visible description in the profile
+
+def set_bot_status(bot):
+    try:
+        bot.set_my_description("🟢 Online – TrumpToss bot is running!")
+        print("✅ Bot description updated.")
+    except Exception as e:
+        print("❌ Failed to set bot description:", e)
+
 def main():
     updater = Updater(BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
 
-    # Set visible bot description
-    set_bot_status(updater.bot)
+    set_bot_status(updater.bot)  # Set the bot's profile description
 
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("status", status))
-    dp.add_handler(CallbackQueryHandler(game_callback))
-    dp.add_handler(CallbackQueryHandler(show_leaderboard, pattern="leaderboard"))
+    dp.add_handler(CallbackQueryHandler(game_callback))  # Handles game URL launch
+    dp.add_handler(CallbackQueryHandler(show_leaderboard, pattern="leaderboard"))  # Handles leaderboard button
 
     updater.start_polling()
     print("✅ Bot is running...")
     updater.idle()
-
 
 if __name__ == "__main__":
     main()
