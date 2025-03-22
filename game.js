@@ -29,6 +29,7 @@ let trumpHitTexture = "trump_hit";
 let hitCooldown = false;
 let soundEnabled = true;
 let soundButton;
+let pointerPreviouslyDown = false;
 
 function preload() {
     this.load.image("trump", "trump.png");
@@ -44,11 +45,9 @@ function preload() {
 }
 
 function create() {
-    // Load saved score
     const savedScore = localStorage.getItem("punches");
     if (savedScore !== null) punches = parseInt(savedScore);
 
-    // Scale to 60vh with aspect ratio
     const targetHeight = this.scale.height * 0.6;
     const originalTrumpImage = this.textures.get("trump").getSourceImage();
     const trumpScale = targetHeight / originalTrumpImage.height;
@@ -69,7 +68,6 @@ function create() {
     this.input.setDefaultCursor("none");
     shoeCursor = this.add.image(0, 0, "shoe").setScale(0.5).setDepth(1);
 
-    // Sound toggle button
     const iconSize = 50;
     soundButton = this.add.image(this.scale.width - iconSize / 2 - 20, iconSize / 2 + 20, "sound_on")
         .setInteractive()
@@ -81,7 +79,6 @@ function create() {
         soundButton.setTexture(soundEnabled ? "sound_on" : "sound_off");
     });
 
-    // Leaderboard button (top-left)
     leaderboardButton = this.add.text(20, 80, "🏆 Leaderboard", {
         fontSize: Math.round(this.scale.width * 0.045) + "px",
         fill: "#0077cc",
@@ -91,7 +88,7 @@ function create() {
     }).setInteractive();
 
     leaderboardButton.on("pointerdown", () => {
-        fetch("https://web-production-5454.up.railway.app/leaderboard")
+        fetch("https://web-production-5454.up.railway.app/")
             .then(res => res.json())
             .then(data => {
                 const text = data.map((entry, i) =>
@@ -109,14 +106,12 @@ function update() {
     shoeCursor.x = pointer.x;
     shoeCursor.y = pointer.y;
 
-    if (pointer.isDown && !pointer.wasDown) {
-        pointer.wasDown = true;
-
+    if (pointer.isDown && !pointerPreviouslyDown) {
         const bounds = trump.getBounds();
         if (Phaser.Geom.Rectangle.Contains(bounds, pointer.x, pointer.y)) {
             punches++;
             punchesText.setText("Punches: " + punches);
-            localStorage.setItem("punches", punches); // Save score persistently
+            localStorage.setItem("punches", punches);
 
             if (soundEnabled) {
                 const randomSound = Phaser.Math.RND.pick(punchSounds);
@@ -132,8 +127,7 @@ function update() {
                 }, 200);
             }
 
-            // Send score to Railway backend
-            fetch("https://web-production-5454.up.railway.app/submit", {
+            fetch("https://web-production-5454.up.railway.app/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -144,7 +138,5 @@ function update() {
         }
     }
 
-    if (!pointer.isDown) {
-        pointer.wasDown = false;
-    }
+    pointerPreviouslyDown = pointer.isDown;
 }
