@@ -115,13 +115,26 @@ function showEmbeddedLeaderboard(scene) {
     leaderboardIframe = document.createElement("iframe");
     leaderboardIframe.src = "https://trumptossleaderboard-production.up.railway.app/leaderboard-page";
     leaderboardIframe.style.width = "100%";
-    leaderboardIframe.style.height = "90%";
+    leaderboardIframe.style.height = "85%";
     leaderboardIframe.style.border = "none";
+
+    const reloadBtn = document.createElement("button");
+    reloadBtn.innerText = "🔄 Reload Leaderboard";
+    reloadBtn.style.width = "100%";
+    reloadBtn.style.height = "7%";
+    reloadBtn.style.border = "none";
+    reloadBtn.style.fontSize = "1em";
+    reloadBtn.style.cursor = "pointer";
+    reloadBtn.style.background = "#d9d9d9";
+
+    reloadBtn.onclick = () => {
+        leaderboardIframe.contentWindow.location.reload();
+    };
 
     const closeBtn = document.createElement("button");
     closeBtn.innerText = "✖ Close";
     closeBtn.style.width = "100%";
-    closeBtn.style.height = "10%";
+    closeBtn.style.height = "8%";
     closeBtn.style.border = "none";
     closeBtn.style.fontSize = "1.2em";
     closeBtn.style.cursor = "pointer";
@@ -133,6 +146,7 @@ function showEmbeddedLeaderboard(scene) {
     };
 
     domContainer.appendChild(leaderboardIframe);
+    domContainer.appendChild(reloadBtn);
     domContainer.appendChild(closeBtn);
     document.body.appendChild(domContainer);
 }
