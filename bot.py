@@ -43,17 +43,17 @@ def show_leaderboard(update: Update, context: CallbackContext):
 def game_callback(update: Update, context: CallbackContext):
     query = update.callback_query
 
-if query.game_short_name == GAME_SHORT_NAME:
-    context.bot.answer_callback_query(
-        callback_query_id=query.id,
-        url=GAME_URL
-    )
+    if query.game_short_name == GAME_SHORT_NAME:
+        context.bot.answer_callback_query(
+            callback_query_id=query.id,
+            url=GAME_URL
+        )
     
-else:
-    context.bot.answer_callback_query(
-        callback_query_id=query.id,
-        text="Unknown game 🤔"
-    )
+    else:
+        context.bot.answer_callback_query(
+            callback_query_id=query.id,
+            text="Unknown game 🤔"
+        )
 
 # /status command
 def status(update: Update, context: CallbackContext):
