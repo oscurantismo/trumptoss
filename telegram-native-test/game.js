@@ -1,5 +1,3 @@
-// === telegram-native-test/game.js ===
-
 let game;
 let punches = 0;
 
@@ -26,8 +24,8 @@ window.onload = () => {
         scale: {
             mode: Phaser.Scale.FIT,
             autoCenter: Phaser.Scale.CENTER_BOTH,
-            width: width,
-            height: height
+            width: Math.floor(width),
+            height: Math.floor(height)
         },
         scene: {
             preload,
@@ -42,6 +40,7 @@ window.onload = () => {
 let trump, shoeCursor, punchesText, punchSounds = [], hitCooldown = false, soundEnabled = true, soundButton;
 
 function preload() {
+    console.log("🔄 Preloading assets...");
     this.load.image("trump", "trump.png");
     this.load.image("trump_hit", "trump_hit.png");
     this.load.image("shoe", "shoe.png");
@@ -54,8 +53,15 @@ function preload() {
 }
 
 function create() {
+    console.log("✅ Game created");
+
     const savedScore = localStorage.getItem("punches");
     if (savedScore !== null) punches = parseInt(savedScore);
+
+    // Debug texture check
+    if (!this.textures.exists("trump")) {
+        console.warn("❌ trump.png failed to load or is missing.");
+    }
 
     const targetHeight = this.scale.height * 0.5;
     const originalTrumpImage = this.textures.get("trump").getSourceImage();
