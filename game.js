@@ -108,6 +108,15 @@ if (!hitCooldown) {
     }, 200);
 }
 
+            function sendScore(score) {
+    if (window.TelegramGameProxy) {
+        TelegramGameProxy.postEvent("score", score);
+    } else {
+        console.warn("TelegramGameProxy not found.");
+    }
+}
+
+
         }
     }
 
