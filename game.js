@@ -81,22 +81,25 @@ function create() {
         soundButton.setTexture(soundEnabled ? "sound_on" : "sound_off");
     });
 
-    // Leaderboard button (top-left)
-    leaderboardButton = this.add.text(20, 80, "🏆 Leaderboard", {
-        fontSize: Math.round(this.scale.width * 0.045) + "px",
-        fill: "#0077cc",
-        backgroundColor: "#eee",
-        padding: { left: 10, right: 10, top: 5, bottom: 5 },
-        borderRadius: 5
-    }).setInteractive();
+// Leaderboard button (top-left)
+leaderboardButton = this.add.text(20, 80, "🏆 Leaderboard", {
+    fontSize: Math.round(this.scale.width * 0.045) + "px",
+    fill: "#0077cc",
+    backgroundColor: "#eee",
+    padding: { left: 10, right: 10, top: 5, bottom: 5 },
+    borderRadius: 5
+}).setInteractive();
 
-    leaderboardButton.on("pointerdown", () => {
-        if (window.TelegramGameProxy) {
-            TelegramGameProxy.postEvent("share_score");
-        } else {
-            alert("Leaderboard is only available in Telegram.");
-        }
-    });
+leaderboardButton.on("pointerdown", () => {
+    if (typeof TelegramGameProxy !== "undefined") {
+        TelegramGameProxy.postEvent("share_score");
+    } else if (typeof Telegram !== "undefined" && Telegram.WebApp) {
+        Telegram.WebApp.sendData(JSON.stringify({ event: "share_score" }));
+    } else {
+        alert("Leaderboards can only be viewed inside Telegram.");
+    }
+});
+
 }
 
 function update() {
