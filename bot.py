@@ -56,13 +56,18 @@ def main():
     updater = Updater(BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
 
+    # Set visible bot description
+    set_bot_status(updater.bot)
+
     dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CallbackQueryHandler(game_callback))  # Handles game URL launch
-    dp.add_handler(CallbackQueryHandler(show_leaderboard, pattern="leaderboard"))  # Handles leaderboard button
+    dp.add_handler(CommandHandler("status", status))
+    dp.add_handler(CallbackQueryHandler(game_callback))
+    dp.add_handler(CallbackQueryHandler(show_leaderboard, pattern="leaderboard"))
 
     updater.start_polling()
     print("✅ Bot is running...")
     updater.idle()
+
 
 if __name__ == "__main__":
     main()
