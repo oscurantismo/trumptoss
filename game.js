@@ -45,18 +45,37 @@ function preload() {
 }
 
 function create() {
-        // Initialise Telegram WebApp
-    if (typeof Telegram !== "undefined" && Telegram.WebApp) {
-        Telegram.WebApp.ready();
-        console.log("✅ Telegram WebApp ready");
-    } else {
-        console.warn("⚠️ Telegram WebApp not available");
+    Telegram.WebApp.ready();
+    console.log("✅ Telegram WebApp ready");
+
+    const telegramUser = Telegram.WebApp?.initDataUnsafe?.user;
+    console.log("🧾 Telegram initDataUnsafe:", Telegram.WebApp?.initDataUnsafe);
+    console.log("👤 Telegram user object:", telegramUser);
+
+    let username = "Anonymous";
+    try {
+        if (telegramUser) {
+            username = telegramUser.username || telegramUser.first_name || "Anonymous";
+        }
+    } catch (e) {
+        console.warn("Telegram user not found:", e);
     }
+
+    fetch("https://trumptossleaderboard-production.up.railway.app/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username })
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("📬 Register result:", data);
+    })
+    .catch(err => {
+        console.error("❌ Registration failed:", err);
+    });
 
     const savedScore = localStorage.getItem("punches");
     if (savedScore !== null) punches = parseInt(savedScore);
-
-    registerUser();
 
     const targetHeight = this.scale.height * 0.6;
     const originalTrumpImage = this.textures.get("trump").getSourceImage();
@@ -104,27 +123,7 @@ function create() {
         showEmbeddedLeaderboard(this);
     });
 
-    trump.on("pointerdown", () => handlePunch());
-}
-
-function registerUser() {
-    let username = "Anonymous";
-    try {
-        if (typeof Telegram !== "undefined" && Telegram.WebApp?.initDataUnsafe?.user) {
-            const user = Telegram.WebApp.initDataUnsafe.user;
-            username = user.username || `user_${user.id}`;
-        }
-    } catch (e) {
-        console.warn("Telegram user info not available:", e);
-    }
-
-    fetch("https://trumptossleaderboard-production.up.railway.app/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username })
-    }).then(res => res.json())
-      .then(data => console.log("Register result:", data))
-      .catch(err => console.error("❌ Registration failed:", err));
+    trump.on("pointerdown", () => handlePunch(username));
 }
 
 function showEmbeddedLeaderboard(scene) {
@@ -157,7 +156,9 @@ function showEmbeddedLeaderboard(scene) {
     reloadBtn.style.cursor = "pointer";
     reloadBtn.style.background = "#d9d9d9";
 
-    reloadBtn.onclick = () => leaderboardIframe.contentWindow.location.reload();
+    reloadBtn.onclick = () => {
+        leaderboardIframe.contentWindow.location.reload();
+    };
 
     const closeBtn = document.createElement("button");
     closeBtn.innerText = "✖ Close";
@@ -179,7 +180,7 @@ function showEmbeddedLeaderboard(scene) {
     document.body.appendChild(domContainer);
 }
 
-function handlePunch() {
+function handlePunch(username) {
     punches++;
     punchesText.setText("Punches: " + punches);
     localStorage.setItem("punches", punches);
@@ -198,14 +199,7 @@ function handlePunch() {
         }, 200);
     }
 
-    let username = "Anonymous";
-    try {
-        if (typeof Telegram !== "undefined" && Telegram.WebApp?.initDataUnsafe?.user?.username) {
-            username = Telegram.WebApp.initDataUnsafe.user.username;
-        }
-    } catch (e) {
-        console.warn("Telegram username not available:", e);
-    }
+    console.log("🎯 Submitting score:", punches, "as", username);
 
     fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
         method: "POST",
@@ -213,7 +207,9 @@ function handlePunch() {
         body: JSON.stringify({ username, score: punches })
     })
     .then(res => {
-        if (!res.ok) console.error("❌ Score submission failed:", res.status);
+        if (!res.ok) {
+            console.error("❌ Submission failed:", res.status);
+        }
     })
     .catch(err => {
         console.error("❌ Error submitting score:", err);
