@@ -48,19 +48,15 @@ function create() {
     Telegram.WebApp.ready();
     console.log("✅ Telegram WebApp ready");
 
-    const telegramUser = Telegram.WebApp?.initDataUnsafe?.user;
-    console.log("🧾 Telegram initDataUnsafe:", Telegram.WebApp?.initDataUnsafe);
-    console.log("👤 Telegram user object:", telegramUser);
+    const tgUser = Telegram.WebApp.initDataUnsafe?.user;
+    console.log("👤 Telegram user object:", tgUser);
 
     let username = "Anonymous";
-    try {
-        if (telegramUser) {
-            username = telegramUser.username || telegramUser.first_name || "Anonymous";
-        }
-    } catch (e) {
-        console.warn("Telegram user not found:", e);
+    if (tgUser && tgUser.username) {
+        username = tgUser.username;
     }
 
+    // Auto-register user on load
     fetch("https://trumptossleaderboard-production.up.railway.app/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,18 +64,17 @@ function create() {
     })
     .then(res => res.json())
     .then(data => {
-        console.log("📬 Register result:", data);
+        console.log("📝 Register result:", data);
     })
     .catch(err => {
-        console.error("❌ Registration failed:", err);
+        console.error("❌ Failed to register user:", err);
     });
 
     const savedScore = localStorage.getItem("punches");
     if (savedScore !== null) punches = parseInt(savedScore);
 
     const targetHeight = this.scale.height * 0.6;
-    const originalTrumpImage = this.textures.get("trump").getSourceImage();
-    const trumpScale = targetHeight / originalTrumpImage.height;
+    const trumpScale = targetHeight / this.textures.get("trump").getSourceImage().height;
 
     trump = this.add.image(this.scale.width / 2, this.scale.height / 2, trumpOriginalTexture)
         .setScale(trumpScale)
@@ -199,7 +194,7 @@ function handlePunch(username) {
         }, 200);
     }
 
-    console.log("🎯 Submitting score:", punches, "as", username);
+    console.log("📤 Submitting score:", punches, "as", username);
 
     fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
         method: "POST",
