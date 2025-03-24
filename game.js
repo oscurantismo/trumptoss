@@ -170,33 +170,34 @@ function handlePunch() {
         }, 200);
     }
 
-    let username = "Anonymous";
-    let userId = "unknown";
-    try {
-        if (typeof Telegram !== "undefined" && Telegram.WebApp?.initDataUnsafe?.user) {
-            const user = Telegram.WebApp.initDataUnsafe.user;
-            username = user.username || `user_${user.id}`;
-            userId = user.id;
+    // Delay for WebApp to load
+    setTimeout(() => {
+        let username = "Anonymous";
+        try {
+            if (
+                typeof Telegram !== "undefined" &&
+                Telegram.WebApp?.initDataUnsafe?.user?.username
+            ) {
+                username = Telegram.WebApp.initDataUnsafe.user.username;
+            }
+        } catch (e) {
+            console.warn("Telegram user info not available:", e);
         }
-    } catch (e) {
-        console.warn("Telegram user info not found:", e);
-    }
 
-    console.log("Submitting score:", punches, "as", username, "(ID:", userId, ")");
+        console.log("Submitting score:", punches, "as", username);
 
-    fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, score: punches, user_id: userId })
-    })
-    .then(res => {
-        if (!res.ok) {
-            console.error("❌ Submission failed:", res.status);
-        }
-    })
-    .catch(err => {
-        console.error("❌ Error submitting score:", err);
-    });
+        fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, score: punches })
+        }).then(res => {
+            if (!res.ok) {
+                console.error("❌ Submission failed:", res.status);
+            }
+        }).catch(err => {
+            console.error("❌ Error submitting score:", err);
+        });
+    }, 200); // Allow Telegram initData to load
 }
 
 function update() {
