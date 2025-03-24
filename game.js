@@ -48,15 +48,11 @@ function create() {
     Telegram.WebApp.ready();
     console.log("✅ Telegram WebApp ready");
 
-    const tgUser = Telegram.WebApp.initDataUnsafe?.user;
-    console.log("👤 Telegram user object:", tgUser);
+    const user = Telegram.WebApp.initDataUnsafe?.user;
+    const username = user?.username || "Anonymous";
+    console.log("👤 Telegram username:", username);
 
-    let username = "Anonymous";
-    if (tgUser && tgUser.username) {
-        username = tgUser.username;
-    }
-
-    // Auto-register user on load
+    // Register user
     fetch("https://trumptossleaderboard-production.up.railway.app/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -67,14 +63,15 @@ function create() {
         console.log("📝 Register result:", data);
     })
     .catch(err => {
-        console.error("❌ Failed to register user:", err);
+        console.error("❌ Error during registration:", err);
     });
 
     const savedScore = localStorage.getItem("punches");
     if (savedScore !== null) punches = parseInt(savedScore);
 
     const targetHeight = this.scale.height * 0.6;
-    const trumpScale = targetHeight / this.textures.get("trump").getSourceImage().height;
+    const originalTrumpImage = this.textures.get("trump").getSourceImage();
+    const trumpScale = targetHeight / originalTrumpImage.height;
 
     trump = this.add.image(this.scale.width / 2, this.scale.height / 2, trumpOriginalTexture)
         .setScale(trumpScale)
@@ -118,7 +115,7 @@ function create() {
         showEmbeddedLeaderboard(this);
     });
 
-    trump.on("pointerdown", () => handlePunch(username));
+    trump.on("pointerdown", () => handlePunch());
 }
 
 function showEmbeddedLeaderboard(scene) {
@@ -175,7 +172,7 @@ function showEmbeddedLeaderboard(scene) {
     document.body.appendChild(domContainer);
 }
 
-function handlePunch(username) {
+function handlePunch() {
     punches++;
     punchesText.setText("Punches: " + punches);
     localStorage.setItem("punches", punches);
@@ -194,17 +191,19 @@ function handlePunch(username) {
         }, 200);
     }
 
-    console.log("📤 Submitting score:", punches, "as", username);
+    const user = Telegram.WebApp?.initDataUnsafe?.user;
+    const username = user?.username || "Anonymous";
+
+    console.log(`📤 Submitting score: ${punches} for ${username}`);
 
     fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, score: punches })
     })
-    .then(res => {
-        if (!res.ok) {
-            console.error("❌ Submission failed:", res.status);
-        }
+    .then(res => res.json())
+    .then(data => {
+        console.log("✅ Score submitted:", data);
     })
     .catch(err => {
         console.error("❌ Error submitting score:", err);
