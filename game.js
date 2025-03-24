@@ -45,6 +45,14 @@ function preload() {
 }
 
 function create() {
+        // Initialise Telegram WebApp
+    if (typeof Telegram !== "undefined" && Telegram.WebApp) {
+        Telegram.WebApp.ready();
+        console.log("✅ Telegram WebApp ready");
+    } else {
+        console.warn("⚠️ Telegram WebApp not available");
+    }
+
     const savedScore = localStorage.getItem("punches");
     if (savedScore !== null) punches = parseInt(savedScore);
 
