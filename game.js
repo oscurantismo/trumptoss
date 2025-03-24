@@ -1,4 +1,3 @@
-
 // === game.js ===
 
 let game;
@@ -24,7 +23,7 @@ window.onload = () => {
     game = new Phaser.Game(gameConfig);
 };
 
-let trump, shoeCursor, punchesText;
+let trump, shoeCursor, punchesText, leaderboardButton;
 let punchSounds = [];
 let trumpOriginalTexture = "trump";
 let trumpHitTexture = "trump_hit";
@@ -40,26 +39,30 @@ function preload() {
     this.load.image("sound_off", "sound_off.png");
 
     for (let i = 1; i <= 4; i++) {
-        this.load.audio("punch" + i, "punch" + i + ".mp3");
+        this.load.audio("punch" + i, `punch${i}.mp3`);
     }
 }
 
 function create() {
-    Telegram.WebApp.ready();
-    console.log("✅ Telegram WebApp ready");
+    try {
+        Telegram.WebApp.ready();
+        console.log("✅ Telegram WebApp ready");
+    } catch (e) {
+        console.warn("⚠️ Telegram WebApp not available");
+    }
 
-    const initUser = Telegram.WebApp.initDataUnsafe?.user;
-    const username = initUser?.username || "Anonymous";
-    console.log("👤 Username for registration:", username);
+    const user = Telegram?.WebApp?.initDataUnsafe?.user;
+    const username = user?.username || "Anonymous";
+    console.log("👤 Username:", username);
 
     fetch("https://trumptossleaderboard-production.up.railway.app/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username })
     })
-    .then(res => res.json())
-    .then(data => console.log("📝 Register result:", data))
-    .catch(err => console.error("❌ Register error:", err));
+        .then(res => res.json())
+        .then(data => console.log("📝 Register:", data))
+        .catch(err => console.error("❌ Registration failed:", err));
 
     renderTabs();
     showTab("game", this);
@@ -98,7 +101,7 @@ function renderTabs() {
 }
 
 function showTab(tab, scene = null) {
-    ["game-container", "leaderboard-container", "info-container"].forEach(id => {
+    ["leaderboard-container", "info-container"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.remove();
     });
@@ -137,12 +140,11 @@ function showTab(tab, scene = null) {
         info.style.fontSize = "1em";
         info.style.overflowY = "auto";
         info.style.zIndex = "999";
-        info.innerHTML = \`
+        info.innerHTML = `
             <h2>👾 TrumpToss Game</h2>
-            <p>Created by @mora_dev</p>
-            <p>Contact: <a href="https://t.me/mora_dev" target="_blank">@mora_dev</a></p>
+            <p>Created by <a href="https://t.me/mora_dev" target="_blank">@mora_dev</a></p>
             <p>© 2025 TrumpToss</p>
-        \`;
+        `;
         document.body.appendChild(info);
     }
 }
@@ -206,19 +208,19 @@ function handlePunch() {
         }, 200);
     }
 
-    const user = Telegram.WebApp?.initDataUnsafe?.user;
+    const user = Telegram?.WebApp?.initDataUnsafe?.user;
     const username = user?.username || "Anonymous";
 
-    console.log("📤 Submitting score:", punches, "as", username);
+    console.log(`📤 Submitting score: ${punches} as ${username}`);
 
     fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, score: punches })
     })
-    .then(res => res.json())
-    .then(data => console.log("✅ Score submitted:", data))
-    .catch(err => console.error("❌ Error submitting score:", err));
+        .then(res => res.json())
+        .then(data => console.log("✅ Score submitted:", data))
+        .catch(err => console.error("❌ Error submitting score:", err));
 }
 
 function update() {
