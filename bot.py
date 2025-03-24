@@ -3,9 +3,9 @@ import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 
-# Load bot token and domain from environment variables
+# Load environment variables
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-WEBHOOK_DOMAIN = os.getenv("WEBHOOK_DOMAIN")  # e.g. https://your-app-name.up.railway.app
+WEBHOOK_DOMAIN = os.getenv("WEBHOOK_DOMAIN")  # e.g., https://your-app-name.up.railway.app
 
 if not BOT_TOKEN or not WEBHOOK_DOMAIN:
     print("❌ BOT_TOKEN or WEBHOOK_DOMAIN not set!")
@@ -13,12 +13,14 @@ if not BOT_TOKEN or not WEBHOOK_DOMAIN:
 else:
     print("✅ Bot token and webhook domain loaded.")
 
-# Game configuration
+# Telegram game config
 GAME_SHORT_NAME = "TrumpToss"
 GAME_URL = "https://oscurantismo.github.io/trumptoss/"
 
-# Logging setup
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+# Logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+)
 
 # /start command
 def start(update: Update, context: CallbackContext):
@@ -33,7 +35,7 @@ def start(update: Update, context: CallbackContext):
         reply_markup=reply_markup
     )
 
-# Game launch handler
+# Game launch
 def game_callback(update: Update, context: CallbackContext):
     query = update.callback_query
 
@@ -42,11 +44,11 @@ def game_callback(update: Update, context: CallbackContext):
     else:
         context.bot.answer_callback_query(callback_query_id=query.id, text="Unknown game 🤔")
 
-# /status command
+# Bot /status command
 def status(update: Update, context: CallbackContext):
     update.message.reply_text("✅ TrumpToss bot is online and running!")
 
-# Optional: update bot profile description
+# Optional: update bot bio
 def set_bot_status(bot):
     try:
         bot.set_my_description("🟢 Online – TrumpToss bot is running!")
@@ -54,15 +56,11 @@ def set_bot_status(bot):
     except Exception as e:
         print("❌ Failed to set bot description:", e)
 
-# Error handler
+# Error handling
 def error_handler(update, context):
-    error_message = str(context.error)
-    if "Query is too old" in error_message:
-        print("⚠️ Stale callback query ignored.")
-    else:
-        print(f"❌ Error: {context.error}")
+    print(f"❌ Error: {context.error}")
 
-# Start the bot with webhook
+# Main entrypoint
 def main():
     updater = Updater(BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
@@ -74,17 +72,18 @@ def main():
     dp.add_handler(CallbackQueryHandler(game_callback))
     dp.add_error_handler(error_handler)
 
-    PORT = int(os.environ.get("PORT", 8443))
-    webhook_url = f"{WEBHOOK_DOMAIN}/{BOT_TOKEN}"
+    PORT = int(os.environ.get("PORT", "8443"))
+    WEBHOOK_URL = f"{WEBHOOK_DOMAIN}/{BOT_TOKEN}"
+
+    print(f"🚀 Setting webhook at {WEBHOOK_URL}")
 
     updater.start_webhook(
         listen="0.0.0.0",
         port=PORT,
         url_path=BOT_TOKEN,
-        webhook_url=webhook_url
+        webhook_url=WEBHOOK_URL
     )
 
-    print(f"🚀 Webhook started at {webhook_url}")
     updater.idle()
 
 if __name__ == "__main__":
