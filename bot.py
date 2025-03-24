@@ -4,7 +4,7 @@ import requests
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 
-# === Configuration ===
+# === Config ===
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 REGISTER_API = "https://trumptossleaderboard-production.up.railway.app/register"
 GAME_SHORT_NAME = "TrumpToss"
@@ -23,19 +23,19 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# === Helpers ===
+# === Helper ===
 def register_user(username: str):
     try:
-        res = requests.post(REGISTER_API, json={"username": username})
-        logger.info(f"📨 Register response: {res.status_code} – {res.json()}")
+        response = requests.post(REGISTER_API, json={"username": username})
+        logger.info(f"📨 Registered {username} → {response.status_code} – {response.json()}")
     except Exception as e:
-        logger.error(f"❌ Failed to register user {username}: {e}")
+        logger.error(f"❌ Failed to register {username}: {e}")
 
-# === Handlers ===
+# === /start command ===
 def start(update: Update, context: CallbackContext):
     user = update.effective_user
     username = user.username or f"user_{user.id}"
-    logger.info(f"/start by {username} (ID: {user.id})")
+    logger.info(f"💬 /start by {username} (ID: {user.id})")
 
     register_user(username)
 
@@ -50,32 +50,46 @@ def start(update: Update, context: CallbackContext):
         reply_markup=reply_markup
     )
 
+# === Game Callback ===
 def game_callback(update: Update, context: CallbackContext):
     query = update.callback_query
-    logger.info(f"🎮 Game callback for: {query.game_short_name}")
+    logger.info(f"🎮 Game launch request: {query.game_short_name}")
 
     if query.game_short_name == GAME_SHORT_NAME:
-        context.bot.answer_callback_query(callback_query_id=query.id, url=GAME_URL)
+        # ✅ Correctly respond with game URL so Telegram launches it
+        context.bot.answer_callback_query(
+            callback_query_id=query.id,
+            url=GAME_URL
+        )
+        logger.info("✅ Game launched via answerCallbackQuery")
     else:
-        context.bot.answer_callback_query(callback_query_id=query.id, text="Unknown game 🤔")
+        context.bot.answer_callback_query(
+            callback_query_id=query.id,
+            text="Unknown game 🤔"
+        )
+        logger.warning("⚠️ Game short name did not match")
 
+# === /status command ===
 def status(update: Update, context: CallbackContext):
     update.message.reply_text("✅ TrumpToss bot is online and running!")
 
+# === Optional bot status description ===
 def set_bot_status(bot):
     try:
         bot.set_my_description("🟢 Online – TrumpToss bot is running!")
-        logger.info("✅ Bot description updated.")
+        logger.info("📍 Bot description updated")
     except Exception as e:
         logger.error(f"❌ Failed to set bot description: {e}")
 
+# === Error Logger ===
 def error_handler(update, context):
     logger.error(f"❌ Error: {context.error}")
     if update:
         logger.warning(f"⚠️ Caused by update: {update}")
 
-# === Main ===
+# === Entry Point ===
 def main():
+    logger.info("🚀 Starting bot using long polling...")
     updater = Updater(BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
 
@@ -86,7 +100,6 @@ def main():
     dp.add_handler(CallbackQueryHandler(game_callback))
     dp.add_error_handler(error_handler)
 
-    logger.info("🚀 Bot is starting with long polling...")
     updater.start_polling()
     updater.idle()
 
