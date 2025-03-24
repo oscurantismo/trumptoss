@@ -48,6 +48,8 @@ function create() {
     const savedScore = localStorage.getItem("punches");
     if (savedScore !== null) punches = parseInt(savedScore);
 
+    registerUser();
+
     const targetHeight = this.scale.height * 0.6;
     const originalTrumpImage = this.textures.get("trump").getSourceImage();
     const trumpScale = targetHeight / originalTrumpImage.height;
@@ -97,6 +99,26 @@ function create() {
     trump.on("pointerdown", () => handlePunch());
 }
 
+function registerUser() {
+    let username = "Anonymous";
+    try {
+        if (typeof Telegram !== "undefined" && Telegram.WebApp?.initDataUnsafe?.user) {
+            const user = Telegram.WebApp.initDataUnsafe.user;
+            username = user.username || `user_${user.id}`;
+        }
+    } catch (e) {
+        console.warn("Telegram user info not available:", e);
+    }
+
+    fetch("https://trumptossleaderboard-production.up.railway.app/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username })
+    }).then(res => res.json())
+      .then(data => console.log("Register result:", data))
+      .catch(err => console.error("❌ Registration failed:", err));
+}
+
 function showEmbeddedLeaderboard(scene) {
     leaderboardPanel = scene.add.rectangle(scene.scale.width / 2, scene.scale.height / 2, scene.scale.width, scene.scale.height, 0xffffff)
         .setOrigin(0.5)
@@ -127,9 +149,7 @@ function showEmbeddedLeaderboard(scene) {
     reloadBtn.style.cursor = "pointer";
     reloadBtn.style.background = "#d9d9d9";
 
-    reloadBtn.onclick = () => {
-        leaderboardIframe.contentWindow.location.reload();
-    };
+    reloadBtn.onclick = () => leaderboardIframe.contentWindow.location.reload();
 
     const closeBtn = document.createElement("button");
     closeBtn.innerText = "✖ Close";
@@ -170,34 +190,26 @@ function handlePunch() {
         }, 200);
     }
 
-    // Delay for WebApp to load
-    setTimeout(() => {
-        let username = "Anonymous";
-        try {
-            if (
-                typeof Telegram !== "undefined" &&
-                Telegram.WebApp?.initDataUnsafe?.user?.username
-            ) {
-                username = Telegram.WebApp.initDataUnsafe.user.username;
-            }
-        } catch (e) {
-            console.warn("Telegram user info not available:", e);
+    let username = "Anonymous";
+    try {
+        if (typeof Telegram !== "undefined" && Telegram.WebApp?.initDataUnsafe?.user?.username) {
+            username = Telegram.WebApp.initDataUnsafe.user.username;
         }
+    } catch (e) {
+        console.warn("Telegram username not available:", e);
+    }
 
-        console.log("Submitting score:", punches, "as", username);
-
-        fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, score: punches })
-        }).then(res => {
-            if (!res.ok) {
-                console.error("❌ Submission failed:", res.status);
-            }
-        }).catch(err => {
-            console.error("❌ Error submitting score:", err);
-        });
-    }, 200); // Allow Telegram initData to load
+    fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, score: punches })
+    })
+    .then(res => {
+        if (!res.ok) console.error("❌ Score submission failed:", res.status);
+    })
+    .catch(err => {
+        console.error("❌ Error submitting score:", err);
+    });
 }
 
 function update() {
