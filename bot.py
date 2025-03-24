@@ -3,14 +3,15 @@ import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 
-# Load bot token from environment
+# Load bot token and domain from environment variables
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+WEBHOOK_DOMAIN = os.getenv("WEBHOOK_DOMAIN")  # e.g. https://your-app-name.up.railway.app
 
-if not BOT_TOKEN:
-    print("❌ BOT_TOKEN not received!")
+if not BOT_TOKEN or not WEBHOOK_DOMAIN:
+    print("❌ BOT_TOKEN or WEBHOOK_DOMAIN not set!")
     exit()
 else:
-    print("✅ BOT_TOKEN received.")
+    print("✅ Bot token and webhook domain loaded.")
 
 # Game configuration
 GAME_SHORT_NAME = "TrumpToss"
@@ -61,7 +62,7 @@ def error_handler(update, context):
     else:
         print(f"❌ Error: {context.error}")
 
-# Start the bot
+# Start the bot with webhook
 def main():
     updater = Updater(BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
@@ -70,11 +71,20 @@ def main():
 
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("status", status))
-    dp.add_handler(CallbackQueryHandler(game_callback, pattern=f"^{GAME_SHORT_NAME}$"))
+    dp.add_handler(CallbackQueryHandler(game_callback))
     dp.add_error_handler(error_handler)
 
-    updater.start_polling()
-    print("✅ Bot is running...")
+    PORT = int(os.environ.get("PORT", 8443))
+    webhook_url = f"{WEBHOOK_DOMAIN}/{BOT_TOKEN}"
+
+    updater.start_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        url_path=BOT_TOKEN,
+        webhook_url=webhook_url
+    )
+
+    print(f"🚀 Webhook started at {webhook_url}")
     updater.idle()
 
 if __name__ == "__main__":
