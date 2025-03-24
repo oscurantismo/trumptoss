@@ -1,9 +1,13 @@
-import os
+from flask import Flask, request
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
+import os
+from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Dispatcher, CommandHandler, CallbackQueryHandler
 
-# Load environment variables
+# Flask app setup
+app = Flask(__name__)
+
+# Environment variables
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_DOMAIN = os.getenv("WEBHOOK_DOMAIN")  # e.g., https://your-app-name.up.railway.app
 
@@ -12,6 +16,10 @@ if not BOT_TOKEN or not WEBHOOK_DOMAIN:
     exit()
 else:
     print(f"✅ BOT_TOKEN and WEBHOOK_DOMAIN loaded:\n→ DOMAIN: {WEBHOOK_DOMAIN}")
+
+# Telegram bot setup
+bot = Bot(token=BOT_TOKEN)
+dispatcher = Dispatcher(bot=bot, update_queue=None, workers=4, use_context=True)
 
 # Telegram game config
 GAME_SHORT_NAME = "TrumpToss"
@@ -22,25 +30,24 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
-
 logger = logging.getLogger(__name__)
 
 # /start command
-def start(update: Update, context: CallbackContext):
+
+def start(update: Update, context):
     logger.info(f"/start command by user {update.effective_user.username} (ID: {update.effective_user.id})")
-    keyboard = [
-        [InlineKeyboardButton("👉 Play TrumpToss", callback_game={"game_short_name": GAME_SHORT_NAME})]
-    ]
+    keyboard = [[InlineKeyboardButton("👉 Play TrumpToss", callback_game={"game_short_name": GAME_SHORT_NAME})]]
     reply_markup = InlineKeyboardMarkup(keyboard)
+    context.bot.send_game(chat_id=update.effective_chat.id, game_short_name=GAME_SHORT_NAME, reply_markup=reply_markup)
 
-    context.bot.send_game(
-        chat_id=update.effective_chat.id,
-        game_short_name=GAME_SHORT_NAME,
-        reply_markup=reply_markup
-    )
+# /status command
 
-# Game launch
-def game_callback(update: Update, context: CallbackContext):
+def status(update: Update, context):
+    update.message.reply_text("✅ TrumpToss bot is online and running!")
+
+# Callback for launching game
+
+def game_callback(update: Update, context):
     query = update.callback_query
     logger.info(f"Game callback received: {query.game_short_name}")
 
@@ -51,13 +58,9 @@ def game_callback(update: Update, context: CallbackContext):
         context.bot.answer_callback_query(callback_query_id=query.id, text="Unknown game 🤔")
         logger.warning("⚠️ Unknown game short name in callback!")
 
-# Bot /status command
-def status(update: Update, context: CallbackContext):
-    logger.info("✅ /status command received")
-    update.message.reply_text("✅ TrumpToss bot is online and running!")
-
 # Optional: update bot bio
-def set_bot_status(bot):
+
+def set_bot_status():
     try:
         bot.set_my_description("🟢 Online – TrumpToss bot is running!")
         logger.info("✅ Bot description set.")
@@ -65,37 +68,32 @@ def set_bot_status(bot):
         logger.error(f"❌ Failed to set bot description: {e}")
 
 # Error handler
+
 def error_handler(update, context):
     logger.error(f"❌ Error occurred: {context.error}")
     if update:
         logger.warning(f"⚠️ Caused by update: {update}")
 
-# Main
-def main():
-    logger.info("🚀 Starting bot...")
-    updater = Updater(BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
+# Register handlers
+dispatcher.add_handler(CommandHandler("start", start))
+dispatcher.add_handler(CommandHandler("status", status))
+dispatcher.add_handler(CallbackQueryHandler(game_callback))
+dispatcher.add_error_handler(error_handler)
 
-    set_bot_status(updater.bot)
+# Webhook route
+@app.route(f"/{BOT_TOKEN}", methods=["POST"])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), bot)
+    dispatcher.process_update(update)
+    return "ok"
 
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("status", status))
-    dp.add_handler(CallbackQueryHandler(game_callback))
-    dp.add_error_handler(error_handler)
+# Root route for debug
+@app.route("/")
+def index():
+    return "🤖 TrumpToss bot is running!"
 
-    PORT = int(os.environ.get("PORT", "8443"))
-    WEBHOOK_URL = f"{WEBHOOK_DOMAIN}/{BOT_TOKEN}"
-
-    logger.info(f"🌐 Setting webhook at: {WEBHOOK_URL}")
-    updater.start_webhook(
-        listen="0.0.0.0",
-        port=PORT,
-        url_path=BOT_TOKEN,
-        webhook_url=WEBHOOK_URL
-    )
-
-    logger.info("✅ Bot is now listening for updates via webhook.")
-    updater.idle()
-
+# Start the Flask app
 if __name__ == "__main__":
-    main()
+    set_bot_status()
+    PORT = int(os.environ.get("PORT", 8443))
+    app.run(host="0.0.0.0", port=PORT)
