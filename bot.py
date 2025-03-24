@@ -1,19 +1,20 @@
 import os
 import logging
+import requests
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 
 # === Configuration ===
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+REGISTER_API = "https://trumptossleaderboard-production.up.railway.app/register"
+GAME_SHORT_NAME = "TrumpToss"
+GAME_URL = "https://oscurantismo.github.io/trumptoss/"
 
 if not BOT_TOKEN:
     print("❌ BOT_TOKEN not found in environment!")
     exit()
 else:
     print("✅ BOT_TOKEN loaded.")
-
-GAME_SHORT_NAME = "TrumpToss"
-GAME_URL = "https://oscurantismo.github.io/trumptoss/"
 
 # === Logging ===
 logging.basicConfig(
@@ -22,9 +23,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# === Helpers ===
+def register_user(username: str):
+    try:
+        res = requests.post(REGISTER_API, json={"username": username})
+        logger.info(f"📨 Register response: {res.status_code} – {res.json()}")
+    except Exception as e:
+        logger.error(f"❌ Failed to register user {username}: {e}")
+
 # === Handlers ===
 def start(update: Update, context: CallbackContext):
-    logger.info(f"/start by {update.effective_user.username} (ID: {update.effective_user.id})")
+    user = update.effective_user
+    username = user.username or f"user_{user.id}"
+    logger.info(f"/start by {username} (ID: {user.id})")
+
+    register_user(username)
 
     keyboard = [
         [InlineKeyboardButton("👉 Play TrumpToss", callback_game={"game_short_name": GAME_SHORT_NAME})]
@@ -39,7 +52,7 @@ def start(update: Update, context: CallbackContext):
 
 def game_callback(update: Update, context: CallbackContext):
     query = update.callback_query
-    logger.info(f"Game callback for: {query.game_short_name}")
+    logger.info(f"🎮 Game callback for: {query.game_short_name}")
 
     if query.game_short_name == GAME_SHORT_NAME:
         context.bot.answer_callback_query(callback_query_id=query.id, url=GAME_URL)
