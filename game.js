@@ -171,20 +171,23 @@ function handlePunch() {
     }
 
     let username = "Anonymous";
+    let userId = "unknown";
     try {
-        if (typeof Telegram !== "undefined" && Telegram.WebApp?.initDataUnsafe?.user?.username) {
-            username = Telegram.WebApp.initDataUnsafe.user.username;
+        if (typeof Telegram !== "undefined" && Telegram.WebApp?.initDataUnsafe?.user) {
+            const user = Telegram.WebApp.initDataUnsafe.user;
+            username = user.username || `user_${user.id}`;
+            userId = user.id;
         }
     } catch (e) {
-        console.warn("Telegram username not found:", e);
+        console.warn("Telegram user info not found:", e);
     }
 
-    console.log("Submitting score:", punches, "as", username);
+    console.log("Submitting score:", punches, "as", username, "(ID:", userId, ")");
 
     fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, score: punches })
+        body: JSON.stringify({ username, score: punches, user_id: userId })
     })
     .then(res => {
         if (!res.ok) {
