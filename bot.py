@@ -11,7 +11,7 @@ if not BOT_TOKEN or not WEBHOOK_DOMAIN:
     print("❌ BOT_TOKEN or WEBHOOK_DOMAIN not set!")
     exit()
 else:
-    print("✅ Bot token and webhook domain loaded.")
+    print(f"✅ BOT_TOKEN and WEBHOOK_DOMAIN loaded:\n→ DOMAIN: {WEBHOOK_DOMAIN}")
 
 # Telegram game config
 GAME_SHORT_NAME = "TrumpToss"
@@ -19,11 +19,15 @@ GAME_URL = "https://oscurantismo.github.io/trumptoss/"
 
 # Logging
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
 )
+
+logger = logging.getLogger(__name__)
 
 # /start command
 def start(update: Update, context: CallbackContext):
+    logger.info(f"/start command by user {update.effective_user.username} (ID: {update.effective_user.id})")
     keyboard = [
         [InlineKeyboardButton("👉 Play TrumpToss", callback_game={"game_short_name": GAME_SHORT_NAME})]
     ]
@@ -38,30 +42,37 @@ def start(update: Update, context: CallbackContext):
 # Game launch
 def game_callback(update: Update, context: CallbackContext):
     query = update.callback_query
+    logger.info(f"Game callback received: {query.game_short_name}")
 
     if query.game_short_name == GAME_SHORT_NAME:
         context.bot.answer_callback_query(callback_query_id=query.id, url=GAME_URL)
+        logger.info("✅ Game URL sent to user.")
     else:
         context.bot.answer_callback_query(callback_query_id=query.id, text="Unknown game 🤔")
+        logger.warning("⚠️ Unknown game short name in callback!")
 
 # Bot /status command
 def status(update: Update, context: CallbackContext):
+    logger.info("✅ /status command received")
     update.message.reply_text("✅ TrumpToss bot is online and running!")
 
 # Optional: update bot bio
 def set_bot_status(bot):
     try:
         bot.set_my_description("🟢 Online – TrumpToss bot is running!")
-        print("✅ Bot description updated.")
+        logger.info("✅ Bot description set.")
     except Exception as e:
-        print("❌ Failed to set bot description:", e)
+        logger.error(f"❌ Failed to set bot description: {e}")
 
-# Error handling
+# Error handler
 def error_handler(update, context):
-    print(f"❌ Error: {context.error}")
+    logger.error(f"❌ Error occurred: {context.error}")
+    if update:
+        logger.warning(f"⚠️ Caused by update: {update}")
 
-# Main entrypoint
+# Main
 def main():
+    logger.info("🚀 Starting bot...")
     updater = Updater(BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
 
@@ -75,8 +86,7 @@ def main():
     PORT = int(os.environ.get("PORT", "8443"))
     WEBHOOK_URL = f"{WEBHOOK_DOMAIN}/{BOT_TOKEN}"
 
-    print(f"🚀 Setting webhook at {WEBHOOK_URL}")
-
+    logger.info(f"🌐 Setting webhook at: {WEBHOOK_URL}")
     updater.start_webhook(
         listen="0.0.0.0",
         port=PORT,
@@ -84,6 +94,7 @@ def main():
         webhook_url=WEBHOOK_URL
     )
 
+    logger.info("✅ Bot is now listening for updates via webhook.")
     updater.idle()
 
 if __name__ == "__main__":
