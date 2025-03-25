@@ -3,38 +3,69 @@ let punches = 0;
 let activeTab = "game";
 let storedUsername = "Anonymous";
 let userId = "";
+let loadedTrumpFrames = new Set(["trump1"]);
 
 window.onload = () => {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    createLoader();
 
     const gameConfig = {
         type: Phaser.AUTO,
-        width: width,
-        height: height,
+        width: window.innerWidth,
+        height: window.innerHeight,
         backgroundColor: "#ffffff",
-        scale: { mode: Phaser.Scale.RESIZE },
         scene: { preload, create, update }
     };
 
     game = new Phaser.Game(gameConfig);
 };
 
-let trump, shoeCursor, punchSounds = [], punchesText, soundButton;
-let trumpFrames = [];
+let trump, shoeCursor, punchSounds = [], soundButton;
 let hitCooldown = false;
 let soundEnabled = true;
 
+function createLoader() {
+    const loader = document.createElement("div");
+    loader.id = "loader";
+    loader.style.position = "fixed";
+    loader.style.top = "0";
+    loader.style.left = "0";
+    loader.style.width = "100%";
+    loader.style.height = "100%";
+    loader.style.display = "flex";
+    loader.style.alignItems = "center";
+    loader.style.justifyContent = "center";
+    loader.style.background = "#ffffff";
+    loader.style.zIndex = "2000";
+    loader.innerHTML = `
+        <div class="spinner"></div>
+        <style>
+        .spinner {
+            border: 6px solid #eee;
+            border-top: 6px solid #b22234;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        </style>
+    `;
+    document.body.appendChild(loader);
+}
+
+function removeLoader() {
+    const el = document.getElementById("loader");
+    if (el) el.remove();
+}
+
 function preload() {
-    for (let i = 1; i <= 30; i++) {
-        const frameName = `trump${i}`;
-        trumpFrames.push(frameName);
-        this.load.image(frameName, `trump-images/trump%20(${i}).png`);
-    }
+    this.load.image("trump1", "trump-images/trump%20(1).webp");
     this.load.image("shoe", "shoe.png");
     this.load.image("sound_on", "sound_on.png");
     this.load.image("sound_off", "sound_off.png");
-
     for (let i = 1; i <= 4; i++) {
         this.load.audio("punch" + i, "punch" + i + ".mp3");
     }
@@ -66,6 +97,7 @@ function create() {
             punches = entry.score;
             localStorage.setItem(`score_${userId}`, punches);
         }
+        removeLoader();
         renderTopBar();
         renderTabs();
         renderShareButton();
@@ -85,24 +117,41 @@ function renderTopBar() {
     top.style.fontFamily = "'Arial Black', sans-serif";
     top.style.padding = "6px 12px";
     top.style.zIndex = "1000";
-    top.innerText = `🇺🇸 ${storedUsername}`;
+    top.innerText = `${storedUsername}`;
     document.body.appendChild(top);
 
     const punchBar = document.createElement("div");
     punchBar.id = "punch-bar";
     punchBar.style.position = "fixed";
     punchBar.style.top = "50px";
-    punchBar.style.left = "0";
-    punchBar.style.width = "100%";
+    punchBar.style.left = "1rem";
+    punchBar.style.right = "1rem";
     punchBar.style.background = "#b22234";
     punchBar.style.color = "#ffffff";
     punchBar.style.textAlign = "center";
     punchBar.style.fontFamily = "'Arial Black', sans-serif";
     punchBar.style.fontSize = "18px";
     punchBar.style.padding = "6px 0";
+    punchBar.style.borderRadius = "8px";
     punchBar.style.zIndex = "999";
     punchBar.innerText = `🥾 Punches: ${punches}`;
     document.body.appendChild(punchBar);
+
+    const iconSize = 32;
+    soundButton = document.createElement("img");
+    soundButton.src = "sound_on.png";
+    soundButton.style.position = "fixed";
+    soundButton.style.top = "8px";
+    soundButton.style.right = "12px";
+    soundButton.style.width = iconSize + "px";
+    soundButton.style.height = iconSize + "px";
+    soundButton.style.cursor = "pointer";
+    soundButton.style.zIndex = "1001";
+    soundButton.onclick = () => {
+        soundEnabled = !soundEnabled;
+        soundButton.src = soundEnabled ? "sound_on.png" : "sound_off.png";
+    };
+    document.body.appendChild(soundButton);
 }
 
 function updatePunchDisplay() {
@@ -186,7 +235,7 @@ function showTab(tab, scene = null) {
         const container = document.createElement("div");
         container.id = "leaderboard-container";
         container.style.position = "fixed";
-        container.style.top = "72px";
+        container.style.top = "100px";
         container.style.bottom = "48px";
         container.style.left = "0";
         container.style.width = "100%";
@@ -204,7 +253,7 @@ function showTab(tab, scene = null) {
         const info = document.createElement("div");
         info.id = "info-container";
         info.style.position = "fixed";
-        info.style.top = "72px";
+        info.style.top = "100px";
         info.style.bottom = "48px";
         info.style.left = "0";
         info.style.width = "100%";
@@ -224,14 +273,18 @@ function showTab(tab, scene = null) {
 }
 
 function showGameUI(scene) {
-    const targetImage = `trump${Math.min(punches, 30)}`;
-    const imageWidth = scene.textures.get(targetImage).getSourceImage().width;
-    const trumpScale = (scene.scale.width * 0.7) / imageWidth;
-
-    trump = scene.add.image(scene.scale.width / 2, scene.scale.height / 2.5, targetImage)
-        .setScale(trumpScale)
-        .setOrigin(0.5)
-        .setInteractive({ useHandCursor: true });
+    const current = Math.min(punches, 30);
+    const textureKey = `trump${current}`;
+    if (!loadedTrumpFrames.has(textureKey)) {
+        scene.load.image(textureKey, `trump-images/trump%20(${current}).webp`);
+        scene.load.once('complete', () => {
+            loadedTrumpFrames.add(textureKey);
+            drawTrump(scene, textureKey);
+        });
+        scene.load.start();
+    } else {
+        drawTrump(scene, textureKey);
+    }
 
     for (let i = 1; i <= 4; i++) {
         punchSounds.push(scene.sound.add("punch" + i));
@@ -241,17 +294,16 @@ function showGameUI(scene) {
     shoeCursor = scene.add.image(scene.input.activePointer.x, scene.input.activePointer.y, "shoe")
         .setScale(0.5)
         .setDepth(999);
+}
 
-    const iconSize = 50;
-    soundButton = scene.add.image(scene.scale.width - iconSize / 2 - 20, iconSize / 2 + 60, "sound_on")
-        .setInteractive()
-        .setDisplaySize(iconSize, iconSize)
-        .setOrigin(0.5);
+function drawTrump(scene, textureKey) {
+    const imageWidth = scene.textures.get(textureKey).getSourceImage().width;
+    const trumpScale = (scene.scale.width * 0.7) / imageWidth;
 
-    soundButton.on("pointerdown", () => {
-        soundEnabled = !soundEnabled;
-        soundButton.setTexture(soundEnabled ? "sound_on" : "sound_off");
-    });
+    trump = scene.add.image(scene.scale.width / 2, scene.scale.height / 2.3, textureKey)
+        .setScale(trumpScale)
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true });
 
     trump.on("pointerdown", () => handlePunch());
 }
@@ -268,9 +320,17 @@ function handlePunch() {
 
     if (!hitCooldown) {
         hitCooldown = true;
-        const newFrame = Math.min(punches, 30);
-        if (punches <= 30) {
-            trump.setTexture(`trump${newFrame}`);
+        const frameNum = Math.min(punches, 30);
+        const key = `trump${frameNum}`;
+        if (!loadedTrumpFrames.has(key)) {
+            game.scene.scenes[0].load.image(key, `trump-images/trump%20(${frameNum}).webp`);
+            game.scene.scenes[0].load.once('complete', () => {
+                loadedTrumpFrames.add(key);
+                trump.setTexture(key);
+            });
+            game.scene.scenes[0].load.start();
+        } else {
+            trump.setTexture(key);
         }
 
         const floatingText = trump.scene.add.text(trump.x, trump.y - 100, "+1", {
@@ -302,7 +362,7 @@ function handlePunch() {
 }
 
 function update() {
-    if (shoeCursor && game && game.input && game.input.activePointer) {
+    if (shoeCursor && game.input && game.input.activePointer) {
         const pointer = game.input.activePointer;
         shoeCursor.setPosition(pointer.x, pointer.y);
     }
