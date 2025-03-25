@@ -37,14 +37,13 @@ async def play(update: Update, context: ContextTypes.DEFAULT_TYPE):
     username = register_user(user_id, user.first_name, user.last_name, user.username)
     logger.info(f"🧾 User doc id: {username}")
 
-        keyboard = InlineKeyboardMarkup([
+    keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("🎮 Play now!", callback_game={"game_short_name": GAME_SHORT_NAME})],
         [
             InlineKeyboardButton("📊 Leaderboard", callback_data="leaderboard"),
             InlineKeyboardButton("ℹ️ About", callback_data="about")
         ]
     ])
-
 
     await context.bot.send_game(
         chat_id=update.effective_chat.id,
@@ -53,7 +52,6 @@ async def play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         protect_content=True,
         disable_notification=True
     )
-
 
 # === /leaderboard ===
 async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -69,7 +67,7 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "<b>TrumpToss Help</b>\nThrow the shoe. Beat the leaderboard. Contact @mora_dev if something breaks."
     )
 
-# === Game Callback ===
+# === Game Launch Callback ===
 async def game_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     if query.game_short_name == GAME_SHORT_NAME:
@@ -85,17 +83,17 @@ async def game_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         logger.warning(f"⚠️ Invalid game_short_name: {query.game_short_name}")
 
-# === Button Callback (leaderboard/about) ===
+# === Inline Button Callback (Leaderboard/About) ===
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     data = query.data
 
-    await query.answer()  # acknowledge button press
+    await query.answer()
 
     if data == "leaderboard":
         await query.message.reply_text("🏆 Leaderboard:\n1. Player1\n2. Player2\n3. Player3")
     elif data == "about":
-        await query.message.reply_text("ℹ️ TrumpToss is a casual game where you score points by throwing a shoe at Trump.")
+        await query.message.reply_text("ℹ️ TrumpToss is a fun and casual game to throw shoes at Trump!")
 
 # === Error Logger ===
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
