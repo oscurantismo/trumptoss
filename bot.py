@@ -12,7 +12,7 @@ REGISTER_API = "https://trumptossleaderboard-production.up.railway.app/register"
 GAME_SHORT_NAME = "TrumpToss"
 GAME_URL = "https://oscurantismo.github.io/trumptoss/"
 
-JWT_SECRET = os.getenv("JWT_SECRET", "supersecretkey")  # Change in production
+JWT_SECRET = os.getenv("JWT_SECRET")  # Change in production
 JWT_ALGORITHM = "HS256"
 
 if not BOT_TOKEN:
