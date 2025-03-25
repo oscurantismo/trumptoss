@@ -39,10 +39,8 @@ async def play(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("🎮 Play now!", callback_game={"game_short_name": GAME_SHORT_NAME})],
-        [
-            InlineKeyboardButton("📊 Leaderboard", callback_data="leaderboard"),
-            InlineKeyboardButton("ℹ️ About", callback_data="about")
-        ]
+        [InlineKeyboardButton("📊 Leaderboard", callback_data="leaderboard")],
+        [InlineKeyboardButton("ℹ️ About", callback_data="about")]
     ])
 
     await context.bot.send_game(
@@ -53,53 +51,56 @@ async def play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         disable_notification=True
     )
 
+# === Game Callback Handler (Telegram spec-compliant) ===
+async def game_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    if not query:
+        logger.warning("⚠️ No callback query received.")
+        return
+
+    logger.info(f"🎮 Callback received from {query.from_user.username} – game_short_name: {query.game_short_name}")
+
+    if query.game_short_name == GAME_SHORT_NAME:
+        await query.answer(url=GAME_URL)
+        logger.info(f"✅ Game URL sent: {GAME_URL}")
+    else:
+        await query.answer(
+            text="❌ Invalid game launch attempt.",
+            show_alert=True
+        )
+        logger.warning(f"⚠️ Invalid game_short_name: {query.game_short_name}")
+
+# === Button Callbacks (Leaderboard/About) ===
+async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    data = query.data
+
+    await query.answer()  # Acknowledge callback
+
+    if data == "leaderboard":
+        await query.message.reply_text("🏆 Leaderboard:\n1. Player1\n2. Player2\n3. Player3")
+    elif data == "about":
+        await query.message.reply_text("ℹ️ TrumpToss is a fun Telegram game where you throw shoes at Trump!")
+
 # === /leaderboard ===
 async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🏆 Leaderboard:\n1. Player1\n2. Player2\n3. Player3")
 
 # === /about ===
 async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("ℹ️ TrumpToss is a shoe-throwing Telegram game for fun.")
+    await update.message.reply_text("ℹ️ TrumpToss is a game about throwing shoes at Trump for points.")
 
 # === /help ===
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_html(
-        "<b>TrumpToss Help</b>\nThrow the shoe. Beat the leaderboard. Contact @mora_dev if something breaks."
+        "<b>TrumpToss Help</b>\nPlay the game, hit Trump, and climb the leaderboard!\nContact @mora_dev for help."
     )
-
-# === Game Launch Callback ===
-async def game_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    if query.game_short_name == GAME_SHORT_NAME:
-        await context.bot.answer_callback_query(
-            callback_query_id=query.id,
-            url=GAME_URL
-        )
-        logger.info(f"✅ Game launched by @{query.from_user.username} (ID: {query.from_user.id})")
-    else:
-        await context.bot.answer_callback_query(
-            callback_query_id=query.id,
-            text="Unknown game 🤔"
-        )
-        logger.warning(f"⚠️ Invalid game_short_name: {query.game_short_name}")
-
-# === Inline Button Callback (Leaderboard/About) ===
-async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    data = query.data
-
-    await query.answer()
-
-    if data == "leaderboard":
-        await query.message.reply_text("🏆 Leaderboard:\n1. Player1\n2. Player2\n3. Player3")
-    elif data == "about":
-        await query.message.reply_text("ℹ️ TrumpToss is a fun and casual game to throw shoes at Trump!")
 
 # === Error Logger ===
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     logger.error("❌ Exception occurred:", exc_info=context.error)
     if update:
-        logger.warning(f"⚠️ Caused by update: {update}")
+        logger.warning(f"⚠️ Update that caused error: {update}")
 
 # === Entry Point ===
 if __name__ == "__main__":
