@@ -74,6 +74,7 @@ function create() {
         renderTopBar();
         renderTabs();
         showTab("game", this);
+        renderShareButton();
     });
 }
 
@@ -227,6 +228,38 @@ function showGameUI(scene) {
 
     trump.on("pointerdown", () => handlePunch());
 }
+
+function renderShareButton() {
+    const btn = document.createElement("button");
+    btn.innerText = "📣 Share Score";
+    btn.style.position = "absolute";
+    btn.style.bottom = "60px";
+    btn.style.right = "20px";
+    btn.style.padding = "10px 14px";
+    btn.style.fontSize = "14px";
+    btn.style.background = "#0077cc";
+    btn.style.color = "#fff";
+    btn.style.border = "none";
+    btn.style.borderRadius = "8px";
+    btn.style.fontFamily = "'Arial Black', sans-serif";
+    btn.style.zIndex = "1001";
+    btn.onclick = () => {
+        Telegram.WebApp.showPopup({
+            title: "Share Score",
+            message: `Your current score is ${punches}. Want to share it with your friends?`,
+            buttons: [
+                { id: "share", type: "default", text: "Share" },
+                { type: "cancel" }
+            ]
+        }, (btnId) => {
+            if (btnId === "share") {
+                Telegram.WebApp.shareScore();
+            }
+        });
+    };
+    document.body.appendChild(btn);
+}
+
 
 function handlePunch() {
     punches++;
