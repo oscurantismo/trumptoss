@@ -1,5 +1,3 @@
-// === game.js ===
-
 let game;
 let punches = 0;
 let activeTab = "game";
@@ -50,6 +48,11 @@ function create() {
         userId = initUser.id.toString();
     }
 
+    const cached = localStorage.getItem(`score_${userId}`);
+    if (cached !== null) {
+        punches = parseInt(cached);
+    }
+
     fetch("https://trumptossleaderboard-production.up.railway.app/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -59,8 +62,9 @@ function create() {
     .then(res => res.json())
     .then(scores => {
         const entry = scores.find(u => u.user_id == userId);
-        if (entry) {
+        if (entry && entry.score > punches) {
             punches = entry.score;
+            localStorage.setItem(`score_${userId}`, punches);
         }
         renderTopBar();
         renderTabs();
@@ -222,7 +226,7 @@ function showGameUI(scene) {
 function handlePunch() {
     punches++;
     updatePunchDisplay();
-    localStorage.setItem("punches", punches);
+    localStorage.setItem(`score_${userId}`, punches);
 
     if (soundEnabled) {
         const sound = Phaser.Math.RND.pick(punchSounds);
