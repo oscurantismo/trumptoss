@@ -1,6 +1,8 @@
 import os
 import logging
 import requests
+import jwt
+import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
 
@@ -9,6 +11,9 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 REGISTER_API = "https://trumptossleaderboard-production.up.railway.app/register"
 GAME_SHORT_NAME = "TrumpToss"
 GAME_URL = "https://oscurantismo.github.io/trumptoss/"
+
+JWT_SECRET = os.getenv("JWT_SECRET", "supersecretkey")  # Change in production
+JWT_ALGORITHM = "HS256"
 
 if not BOT_TOKEN:
     print("❌ BOT_TOKEN not found in environment!")
@@ -22,6 +27,16 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+
+# === JWT Token Generator ===
+def generate_jwt(user_id, username):
+    payload = {
+        "user_id": user_id,
+        "username": username,
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=2)
+    }
+    token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return token
 
 # === Helper ===
 def register_user(username: str):
@@ -38,6 +53,8 @@ def start(update: Update, context: CallbackContext):
     logger.info(f"💬 /start by {username} (ID: {user.id})")
 
     register_user(username)
+    token = generate_jwt(user.id, username)
+    logger.info(f"🔐 Generated JWT for {username}: {token}")
 
     keyboard = [
         [InlineKeyboardButton("👉 Play TrumpToss", callback_game={"game_short_name": GAME_SHORT_NAME})]
@@ -53,15 +70,19 @@ def start(update: Update, context: CallbackContext):
 # === Game Callback ===
 def game_callback(update: Update, context: CallbackContext):
     query = update.callback_query
-    logger.info(f"🎮 Game launch request: {query.game_short_name}")
+    user = query.from_user
+    username = user.username or f"user_{user.id}"
+    logger.info(f"🎮 Game launch request: {query.game_short_name} by {username}")
 
     if query.game_short_name == GAME_SHORT_NAME:
-        # ✅ Correctly respond with game URL so Telegram launches it
+        token = generate_jwt(user.id, username)
+        game_url_with_token = f"{GAME_URL}?token={token}"
+
         context.bot.answer_callback_query(
             callback_query_id=query.id,
-            url=GAME_URL
+            url=game_url_with_token
         )
-        logger.info("✅ Game launched via answerCallbackQuery")
+        logger.info("✅ Game launched via answerCallbackQuery with token")
     else:
         context.bot.answer_callback_query(
             callback_query_id=query.id,
