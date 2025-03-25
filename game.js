@@ -1,4 +1,4 @@
-// game.js – final version with original layout, JWT support, and working leaderboard
+// game.js – final version with original layout, JWT support, and working leaderboard + cursor tracking
 
 let game;
 let punches = 0;
@@ -14,10 +14,6 @@ window.onload = () => {
     width: width,
     height: height,
     backgroundColor: "#ffffff",
-    physics: {
-      default: "arcade",
-      arcade: { gravity: { y: 600 }, debug: false }
-    },
     scene: {
       preload,
       create,
@@ -123,8 +119,8 @@ function showTab(tabName, scene) {
 }
 
 function setupGame(scene) {
-  trump = scene.physics.add.sprite(400, 300, "trump").setInteractive();
-  shoeCursor = scene.physics.add.sprite(400, 600, "shoe").setCollideWorldBounds(true);
+  trump = scene.add.sprite(400, 300, "trump").setInteractive();
+  shoeCursor = scene.add.sprite(400, 600, "shoe");
 
   for (let i = 1; i <= 4; i++) {
     punchSounds.push(scene.sound.add("punch" + i));
@@ -140,6 +136,9 @@ function setupGame(scene) {
 
   soundButton = scene.add.image(scene.sys.game.config.width - 40, 40, "sound_on").setInteractive().setScale(0.5);
   soundButton.on("pointerdown", () => toggleSound());
+
+  // hide default cursor, use shoe sprite instead
+  scene.input.setDefaultCursor("none");
 }
 
 function toggleSound() {
@@ -184,5 +183,9 @@ function submitScore(score) {
 }
 
 function update() {
-  // future game loop logic
+  if (shoeCursor) {
+    const pointer = game.input.activePointer;
+    shoeCursor.x = pointer.x;
+    shoeCursor.y = pointer.y;
+  }
 }
