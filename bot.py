@@ -2,7 +2,9 @@ import os
 import logging
 import requests
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram.ext import (
+    ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
+)
 
 # === Config ===
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -44,7 +46,7 @@ async def play(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # === /leaderboard command ===
 async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🏆 Leaderboard:\n1. User1\n2. User2\n3. User3")
+    await update.message.reply_text("🏆 Leaderboard:\n1. Player1\n2. Player2\n3. Player3")
 
 # === /about command ===
 async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -73,6 +75,12 @@ async def game_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         logger.warning(f"⚠️ Invalid game_short_name received: {query.game_short_name}")
 
+# === Error Handler ===
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.error("❌ Exception occurred:", exc_info=context.error)
+    if update:
+        logger.warning(f"⚠️ Update that caused error: {update}")
+
 # === Entry Point ===
 if __name__ == "__main__":
     if not BOT_TOKEN:
@@ -88,6 +96,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("help", help_cmd))
     app.add_handler(CallbackQueryHandler(game_callback, pattern="^" + GAME_SHORT_NAME + "$", block=False))
     app.add_handler(CallbackQueryHandler(game_callback, block=False))
+    app.add_error_handler(error_handler)
 
     print("🚀 TrumpToss bot is running...")
     app.run_polling()
