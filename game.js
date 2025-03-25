@@ -235,14 +235,14 @@ function showTab(tab, scene = null) {
         const container = document.createElement("div");
         container.id = "leaderboard-container";
         container.style.position = "fixed";
-        container.style.top = "100px";
-        container.style.bottom = "48px";
+        container.style.top = "100px"; // below punch bar
+        container.style.bottom = "48px"; // above nav tabs
         container.style.left = "0";
         container.style.width = "100%";
         container.style.zIndex = "999";
 
         const iframe = document.createElement("iframe");
-        iframe.src = "https://trumptossleaderboard-production.up.railway.app/leaderboard-page";
+        iframe.src = `https://trumptossleaderboard-production.up.railway.app/leaderboard-page?user_id=${userId}`;
         iframe.style.width = "100%";
         iframe.style.height = "100%";
         iframe.style.border = "none";
