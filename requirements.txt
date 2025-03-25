@@ -3,3 +3,4 @@ urllib3==1.26.15
 six==1.16.0
 requests
 flask
+PyJWT==2.8.0
