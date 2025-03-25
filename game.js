@@ -1,5 +1,3 @@
-import jwt_decode from "https://cdn.jsdelivr.net/npm/jwt-decode@4.0.0/build/jwt-decode.esm.js";
-
 let game;
 let punches = 0;
 let username = "Anonymous";
@@ -49,6 +47,7 @@ function create() {
   showTab("game", this);
 }
 
+
 function decodeToken() {
   const params = new URLSearchParams(window.location.search);
   const token = params.get("token");
@@ -67,6 +66,8 @@ function decodeToken() {
     console.warn("⚠️ No token found in URL");
   }
 }
+
+console.log("👤 Player:", username);
 
 function renderTabs() {
   const tabContainer = document.createElement("div");
