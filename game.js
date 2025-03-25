@@ -1,4 +1,4 @@
-// game.js – updated with username display and backend-safe token decode (non-module)
+// game.js – final version with original layout, JWT support, and working leaderboard
 
 let game;
 let punches = 0;
@@ -14,6 +14,10 @@ window.onload = () => {
     width: width,
     height: height,
     backgroundColor: "#ffffff",
+    physics: {
+      default: "arcade",
+      arcade: { gravity: { y: 600 }, debug: false }
+    },
     scene: {
       preload,
       create,
@@ -180,5 +184,5 @@ function submitScore(score) {
 }
 
 function update() {
-  // game loop, if needed
+  // future game loop logic
 }
