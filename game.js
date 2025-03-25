@@ -61,17 +61,38 @@ function create() {
     }
     console.log("👤 Username for registration:", storedUsername);
 
+    // Register and fetch user score
     fetch("https://trumptossleaderboard-production.up.railway.app/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: storedUsername })
     })
     .then(res => res.json())
-    .then(data => console.log(`📝 Register result for ${storedUsername}:`, data))
-    .catch(err => console.error("❌ Register error:", err));
-
-    renderTabs();
-    showTab("game", this);
+    .then(data => {
+        console.log(`📝 Register result for ${storedUsername}:`, data);
+        fetch(`https://trumptossleaderboard-production.up.railway.app/leaderboard`)
+            .then(res => res.json())
+            .then(scores => {
+                const match = scores.find(u => u.username.toLowerCase() === storedUsername.toLowerCase());
+                if (match) {
+                    punches = match.score;
+                    localStorage.setItem("punches", punches);
+                    console.log(`📥 Synced score for ${storedUsername}: ${punches}`);
+                }
+                renderTabs();
+                showTab("game", this);
+            })
+            .catch(err => {
+                console.error("❌ Failed to load score:", err);
+                renderTabs();
+                showTab("game", this);
+            });
+    })
+    .catch(err => {
+        console.error("❌ Register error:", err);
+        renderTabs();
+        showTab("game", this);
+    });
 }
 
 function renderTabs() {
@@ -105,7 +126,6 @@ function renderTabs() {
 
     document.body.appendChild(tabContainer);
 
-    // Username overlay under tab container
     const userOverlay = document.createElement("div");
     userOverlay.innerText = `👤 Player: ${storedUsername}`;
     userOverlay.style.position = "absolute";
@@ -173,9 +193,6 @@ function showTab(tab, scene = null) {
 }
 
 function showGameUI(scene) {
-    const savedScore = localStorage.getItem("punches");
-    if (savedScore !== null) punches = parseInt(savedScore);
-
     const targetHeight = scene.scale.height * 0.6;
     const trumpScale = targetHeight / scene.textures.get("trump").getSourceImage().height;
 
