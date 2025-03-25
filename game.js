@@ -1,16 +1,56 @@
-let username = "Anonymous";
-let userId = null;
-let punches = 0;
-let punchesText;
-let hitCooldown = false;
-let soundEnabled = true;
+// game.js – updated with username display and backend-safe token decode (non-module)
 
-let trump;
+let game;
+let punches = 0;
+let username = "Anonymous";
+let activeTab = "game";
+
+window.onload = () => {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  const gameConfig = {
+    type: Phaser.AUTO,
+    width: width,
+    height: height,
+    backgroundColor: "#ffffff",
+    scene: {
+      preload,
+      create,
+      update,
+    },
+  };
+
+  game = new Phaser.Game(gameConfig);
+};
+
+let trump, shoeCursor, punchesText;
+let punchSounds = [];
 let trumpOriginalTexture = "trump";
 let trumpHitTexture = "trump_hit";
-let punchSounds = [];
+let hitCooldown = false;
+let soundEnabled = true;
+let soundButton;
 
-// Decode JWT token from URL and extract username
+function preload() {
+  this.load.image("trump", "trump.png");
+  this.load.image("trump_hit", "trump_hit.png");
+  this.load.image("shoe", "shoe.png");
+  this.load.image("sound_on", "sound_on.png");
+  this.load.image("sound_off", "sound_off.png");
+
+  for (let i = 1; i <= 4; i++) {
+    this.load.audio("punch" + i, `punch${i}.mp3`);
+  }
+}
+
+function create() {
+  decodeToken();
+  renderTabs();
+  showTab("game", this);
+  displayUsername();
+}
+
 function decodeToken() {
   const params = new URLSearchParams(window.location.search);
   const token = params.get("token");
@@ -18,101 +58,93 @@ function decodeToken() {
   if (token && window.jwt_decode) {
     try {
       const decoded = jwt_decode(token);
-      username = decoded.username || decoded.name || "Anonymous";
-      userId = decoded.user_id || null;
-      console.log("✅ Decoded user:", username);
-    } catch (err) {
-      console.error("❌ Invalid JWT token", err);
+      console.log("✅ Decoded JWT:", decoded);
+      if (decoded.username) {
+        username = decoded.username;
+      }
+    } catch (e) {
+      console.error("❌ Invalid JWT token", e);
     }
   } else {
-    console.warn("⚠️ No token provided in URL");
+    console.warn("⚠️ No token found in URL");
   }
 }
 
-// Show username at the top-left
-function showUsername() {
+function displayUsername() {
   const tag = document.createElement("div");
   tag.innerText = `👤 ${username}`;
   tag.style.position = "absolute";
-  tag.style.top = "10px";
-  tag.style.left = "10px";
+  tag.style.top = "50px";
+  tag.style.left = "0";
+  tag.style.width = "100%";
+  tag.style.textAlign = "center";
   tag.style.fontSize = "16px";
   tag.style.fontWeight = "bold";
   tag.style.color = "#333";
   tag.style.background = "#ffffffcc";
   tag.style.padding = "6px 10px";
-  tag.style.borderRadius = "10px";
   tag.style.zIndex = "1000";
   document.body.appendChild(tag);
 }
 
-// Submit score to Railway leaderboard
-function submitScore(score) {
-  console.log(`📤 Submitting score: ${score} for ${username}`);
+function renderTabs() {
+  const tabContainer = document.createElement("div");
+  tabContainer.id = "tab-container";
+  tabContainer.style.position = "absolute";
+  tabContainer.style.top = "0";
+  tabContainer.style.left = "0";
+  tabContainer.style.width = "100%";
+  tabContainer.style.display = "flex";
+  tabContainer.style.justifyContent = "center";
+  tabContainer.style.backgroundColor = "#eee";
 
-  fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, score }),
-  })
-    .then((res) => res.json())
-    .then((data) => console.log("✅ Score submitted:", data))
-    .catch((err) => console.error("❌ Error submitting score:", err));
+  ["game", "leaderboard"].forEach((tab) => {
+    const button = document.createElement("button");
+    button.innerText = tab.charAt(0).toUpperCase() + tab.slice(1);
+    button.style.margin = "10px";
+    button.onclick = () => showTab(tab, game.scene.scenes[0]);
+    tabContainer.appendChild(button);
+  });
+
+  document.body.appendChild(tabContainer);
 }
 
-// Game logic setup
-decodeToken();
-showUsername();
-
-const config = {
-  type: Phaser.AUTO,
-  width: window.innerWidth,
-  height: window.innerHeight,
-  scene: {
-    preload,
-    create,
-    update
-  },
-  physics: {
-    default: "arcade",
-    arcade: {
-      gravity: { y: 600 },
-      debug: false
-    }
+function showTab(tabName, scene) {
+  activeTab = tabName;
+  if (tabName === "game") {
+    setupGame(scene);
+  } else if (tabName === "leaderboard") {
+    window.location.href = "https://trumptossleaderboard-production.up.railway.app/leaderboard-page";
   }
-};
-
-const game = new Phaser.Game(config);
-
-function preload() {
-  this.load.image("trump", "trump.png");
-  this.load.image("trump_hit", "trump_hit.png");
-  this.load.image("shoe", "shoe.png");
-  this.load.audio("punch1", "punch1.mp3");
-  this.load.audio("punch2", "punch2.mp3");
-  this.load.audio("punch3", "punch3.mp3");
 }
 
-function create() {
-  trump = this.physics.add.sprite(400, 300, "trump").setInteractive();
-  const shoe = this.physics.add.sprite(400, 600, "shoe").setCollideWorldBounds(true);
+function setupGame(scene) {
+  trump = scene.physics.add.sprite(400, 300, "trump").setInteractive();
+  shoeCursor = scene.physics.add.sprite(400, 600, "shoe").setCollideWorldBounds(true);
 
-  punchSounds = [
-    this.sound.add("punch1"),
-    this.sound.add("punch2"),
-    this.sound.add("punch3")
-  ];
+  for (let i = 1; i <= 4; i++) {
+    punchSounds.push(scene.sound.add("punch" + i));
+  }
 
-  trump.on("pointerdown", handlePunch.bind(this));
+  trump.on("pointerdown", () => handlePunch(scene));
 
   punches = parseInt(localStorage.getItem("punches")) || 0;
-  punchesText = this.add.text(20, 50, "Punches: " + punches, {
+  punchesText = scene.add.text(20, 90, "Punches: " + punches, {
     fontSize: "24px",
     fill: "#000"
   });
+
+  soundButton = scene.add.image(scene.sys.game.config.width - 40, 40, "sound_on").setInteractive().setScale(0.5);
+  soundButton.on("pointerdown", () => toggleSound());
 }
 
-function handlePunch() {
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  const texture = soundEnabled ? "sound_on" : "sound_off";
+  soundButton.setTexture(texture);
+}
+
+function handlePunch(scene) {
   punches++;
   punchesText.setText("Punches: " + punches);
   localStorage.setItem("punches", punches);
@@ -134,6 +166,19 @@ function handlePunch() {
   submitScore(punches);
 }
 
+function submitScore(score) {
+  console.log(`📤 Submitting score: ${score} for ${username}`);
+
+  fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, score }),
+  })
+    .then((res) => res.json())
+    .then((data) => console.log("✅ Score submitted:", data))
+    .catch((err) => console.error("❌ Error submitting score:", err));
+}
+
 function update() {
-  // No dynamic physics needed for now
+  // game loop, if needed
 }
