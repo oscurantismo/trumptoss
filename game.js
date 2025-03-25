@@ -25,7 +25,7 @@ window.onload = () => {
     game = new Phaser.Game(gameConfig);
 };
 
-let trump, shoeCursor, punchesText;
+let trump, shoeCursor, punchesText, overlayText;
 let punchSounds = [];
 let trumpOriginalTexture = "trump";
 let trumpHitTexture = "trump_hit";
@@ -104,6 +104,22 @@ function renderTabs() {
     });
 
     document.body.appendChild(tabContainer);
+
+    // Username overlay under tab container
+    const userOverlay = document.createElement("div");
+    userOverlay.innerText = `👤 Player: ${storedUsername}`;
+    userOverlay.style.position = "absolute";
+    userOverlay.style.top = "40px";
+    userOverlay.style.left = "0";
+    userOverlay.style.width = "100%";
+    userOverlay.style.textAlign = "center";
+    userOverlay.style.fontSize = "16px";
+    userOverlay.style.fontFamily = "Arial";
+    userOverlay.style.background = "#fff";
+    userOverlay.style.zIndex = "9998";
+    userOverlay.style.padding = "5px 0";
+    userOverlay.id = "username-display";
+    document.body.appendChild(userOverlay);
 }
 
 function showTab(tab, scene = null) {
@@ -118,10 +134,10 @@ function showTab(tab, scene = null) {
         const container = document.createElement("div");
         container.id = "leaderboard-container";
         container.style.position = "absolute";
-        container.style.top = "40px";
+        container.style.top = "70px";
         container.style.left = "0";
         container.style.width = "100%";
-        container.style.height = "calc(100% - 40px)";
+        container.style.height = "calc(100% - 70px)";
         container.style.zIndex = "999";
 
         const iframe = document.createElement("iframe");
@@ -136,10 +152,10 @@ function showTab(tab, scene = null) {
         const info = document.createElement("div");
         info.id = "info-container";
         info.style.position = "absolute";
-        info.style.top = "40px";
+        info.style.top = "70px";
         info.style.left = "0";
         info.style.width = "100%";
-        info.style.height = "calc(100% - 40px)";
+        info.style.height = "calc(100% - 70px)";
         info.style.background = "#fefefe";
         info.style.padding = "20px";
         info.style.fontFamily = "Arial";
@@ -168,12 +184,7 @@ function showGameUI(scene) {
         .setOrigin(0.5)
         .setInteractive({ useHandCursor: true });
 
-    usernameDisplayText = scene.add.text(20, 20, `Player: ${storedUsername}`, {
-        fontSize: Math.round(scene.scale.width * 0.04) + "px",
-        fill: "#000"
-    });
-
-    punchesText = scene.add.text(20, 50 + usernameDisplayText.height, "Punches: " + punches, {
+    punchesText = scene.add.text(20, 80, "Punches: " + punches, {
         fontSize: Math.round(scene.scale.width * 0.05) + "px",
         fill: "#000"
     });
