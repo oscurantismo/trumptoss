@@ -1,4 +1,4 @@
-// === game.js ===
+// === game.js with JWT decoding and tabs ===
 
 let game;
 let punches = 0;
@@ -23,6 +23,29 @@ window.onload = () => {
     game = new Phaser.Game(gameConfig);
 };
 
+// === JWT decode helper ===
+function jwtDecode(token) {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+            atob(base64)
+                .split('')
+                .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                .join('')
+        );
+        return JSON.parse(jsonPayload);
+    } catch (e) {
+        console.error("❌ Failed to decode JWT:", e);
+        return null;
+    }
+}
+
+function getTokenFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("token");
+}
+
 let trump, shoeCursor, punchesText, leaderboardButton;
 let punchSounds = [];
 let trumpOriginalTexture = "trump";
@@ -37,32 +60,34 @@ function preload() {
     this.load.image("shoe", "shoe.png");
     this.load.image("sound_on", "sound_on.png");
     this.load.image("sound_off", "sound_off.png");
-
     for (let i = 1; i <= 4; i++) {
         this.load.audio("punch" + i, `punch${i}.mp3`);
     }
 }
 
 function create() {
-    try {
-        Telegram.WebApp.ready();
-        console.log("✅ Telegram WebApp ready");
-    } catch (e) {
-        console.warn("⚠️ Telegram WebApp not available");
-    }
+    Telegram.WebApp.ready();
+    console.log("✅ Telegram WebApp ready");
 
-    const user = Telegram?.WebApp?.initDataUnsafe?.user;
-    const username = user?.username || "Anonymous";
-    console.log("👤 Username:", username);
+    const token = getTokenFromURL();
+    const decoded = jwtDecode(token);
+    let username = "Anonymous";
+
+    if (decoded && decoded.user_id) {
+        username = `user_${decoded.user_id}`;
+        console.log("✅ Decoded JWT user:", decoded);
+    } else {
+        console.warn("⚠️ JWT not present or invalid. Defaulting to Anonymous.");
+    }
 
     fetch("https://trumptossleaderboard-production.up.railway.app/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username })
     })
-        .then(res => res.json())
-        .then(data => console.log("📝 Register:", data))
-        .catch(err => console.error("❌ Registration failed:", err));
+    .then(res => res.json())
+    .then(data => console.log("📝 Register result:", data))
+    .catch(err => console.error("❌ Error during registration:", err));
 
     renderTabs();
     showTab("game", this);
@@ -101,7 +126,7 @@ function renderTabs() {
 }
 
 function showTab(tab, scene = null) {
-    ["leaderboard-container", "info-container"].forEach(id => {
+    ["game-container", "leaderboard-container", "info-container"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.remove();
     });
@@ -142,7 +167,8 @@ function showTab(tab, scene = null) {
         info.style.zIndex = "999";
         info.innerHTML = `
             <h2>👾 TrumpToss Game</h2>
-            <p>Created by <a href="https://t.me/mora_dev" target="_blank">@mora_dev</a></p>
+            <p>Created by @mora_dev</p>
+            <p>Contact: <a href="https://t.me/mora_dev" target="_blank">@mora_dev</a></p>
             <p>© 2025 TrumpToss</p>
         `;
         document.body.appendChild(info);
@@ -208,19 +234,18 @@ function handlePunch() {
         }, 200);
     }
 
-    const user = Telegram?.WebApp?.initDataUnsafe?.user;
-    const username = user?.username || "Anonymous";
-
-    console.log(`📤 Submitting score: ${punches} as ${username}`);
+    const token = getTokenFromURL();
+    const decoded = jwtDecode(token);
+    const username = decoded && decoded.user_id ? `user_${decoded.user_id}` : "Anonymous";
 
     fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, score: punches })
     })
-        .then(res => res.json())
-        .then(data => console.log("✅ Score submitted:", data))
-        .catch(err => console.error("❌ Error submitting score:", err));
+    .then(res => res.json())
+    .then(data => console.log("✅ Score submitted:", data))
+    .catch(err => console.error("❌ Error submitting score:", err));
 }
 
 function update() {
