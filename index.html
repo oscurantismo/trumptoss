@@ -26,10 +26,16 @@
   <!-- Phaser engine -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
 
-  <!-- JWT Decode (non-module version) -->
+  <!-- JWT Decode: load first -->
   <script src="https://cdn.jsdelivr.net/npm/jwt-decode@4.0.0/build/jwt-decode.min.js"></script>
 
-  <!-- Your game script -->
-  <script src="./game.js"></script>
+  <!-- Load game.js only after JWT is defined -->
+  <script>
+    window.addEventListener("load", () => {
+      const script = document.createElement("script");
+      script.src = "./game.js";
+      document.body.appendChild(script);
+    });
+  </script>
 </body>
 </html>
