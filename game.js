@@ -32,7 +32,7 @@ function preload() {
     for (let i = 1; i <= 30; i++) {
         const frameName = `trump${i}`;
         trumpFrames.push(frameName);
-        this.load.image(frameName, `trump-images/trump(${i}).png`);
+        this.load.image(frameName, `trump-images/trump (${i}).png`);
     }
     this.load.image("shoe", "shoe.png");
     this.load.image("sound_on", "sound_on.png");
