@@ -3,8 +3,8 @@
 let game;
 let punches = 0;
 let activeTab = "game";
-let usernameDisplayText = null;
 let storedUsername = "Anonymous";
+let userId = "";
 
 window.onload = () => {
     const width = window.innerWidth;
@@ -25,13 +25,11 @@ window.onload = () => {
     game = new Phaser.Game(gameConfig);
 };
 
-let trump, shoeCursor, punchesText, overlayText;
-let punchSounds = [];
+let trump, shoeCursor, punchSounds = [], punchesText, soundButton;
 let trumpOriginalTexture = "trump";
 let trumpHitTexture = "trump_hit";
 let hitCooldown = false;
 let soundEnabled = true;
-let soundButton;
 
 function preload() {
     this.load.image("trump", "trump.png");
@@ -39,7 +37,6 @@ function preload() {
     this.load.image("shoe", "shoe.png");
     this.load.image("sound_on", "sound_on.png");
     this.load.image("sound_off", "sound_off.png");
-
     for (let i = 1; i <= 4; i++) {
         this.load.audio("punch" + i, "punch" + i + ".mp3");
     }
@@ -47,99 +44,97 @@ function preload() {
 
 function create() {
     Telegram.WebApp.ready();
-    console.log("✅ Telegram WebApp ready");
-
     const initUser = Telegram.WebApp.initDataUnsafe?.user;
-    console.log("📦 Telegram WebApp.initDataUnsafe.user =", initUser);
     if (initUser) {
-        storedUsername =
-            initUser.username ||
-            `${initUser.first_name || "user"}${initUser.last_name ? "_" + initUser.last_name : ""}` ||
-            `user_${initUser.id}`;
-    } else {
-        storedUsername = "anonymous_client";
+        storedUsername = initUser.username || `${initUser.first_name}_${initUser.last_name || ""}`.trim();
+        userId = initUser.id.toString();
     }
-    console.log("👤 Username for registration:", storedUsername);
 
-    // Register and fetch user score
     fetch("https://trumptossleaderboard-production.up.railway.app/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: storedUsername })
+        body: JSON.stringify({ username: storedUsername, user_id: userId })
     })
+    .then(() => fetch("https://trumptossleaderboard-production.up.railway.app/leaderboard"))
     .then(res => res.json())
-    .then(data => {
-        console.log(`📝 Register result for ${storedUsername}:`, data);
-        fetch(`https://trumptossleaderboard-production.up.railway.app/leaderboard`)
-            .then(res => res.json())
-            .then(scores => {
-                const match = scores.find(u => u.username.toLowerCase() === storedUsername.toLowerCase());
-                if (match) {
-                    punches = match.score;
-                    localStorage.setItem("punches", punches);
-                    console.log(`📥 Synced score for ${storedUsername}: ${punches}`);
-                }
-                renderTabs();
-                showTab("game", this);
-            })
-            .catch(err => {
-                console.error("❌ Failed to load score:", err);
-                renderTabs();
-                showTab("game", this);
-            });
-    })
-    .catch(err => {
-        console.error("❌ Register error:", err);
+    .then(scores => {
+        const entry = scores.find(u => u.user_id == userId);
+        if (entry) {
+            punches = entry.score;
+        }
+        renderTopBar();
         renderTabs();
         showTab("game", this);
     });
 }
 
+function renderTopBar() {
+    const top = document.createElement("div");
+    top.style.position = "absolute";
+    top.style.top = "0";
+    top.style.left = "0";
+    top.style.width = "100%";
+    top.style.background = "#111";
+    top.style.color = "#fff";
+    top.style.fontFamily = "Arial";
+    top.style.textAlign = "center";
+    top.style.padding = "8px 0";
+    top.style.zIndex = "1000";
+    top.innerText = `👤 ${storedUsername}`;
+    document.body.appendChild(top);
+
+    const punchBar = document.createElement("div");
+    punchBar.id = "punch-bar";
+    punchBar.style.position = "absolute";
+    punchBar.style.top = "36px";
+    punchBar.style.left = "0";
+    punchBar.style.width = "100%";
+    punchBar.style.background = "#ffcc00";
+    punchBar.style.color = "#000";
+    punchBar.style.textAlign = "center";
+    punchBar.style.fontWeight = "bold";
+    punchBar.style.padding = "6px 0";
+    punchBar.style.zIndex = "1000";
+    punchBar.innerText = `🥾 Punches: ${punches}`;
+    document.body.appendChild(punchBar);
+}
+
+function updatePunchDisplay() {
+    const bar = document.getElementById("punch-bar");
+    if (bar) bar.innerText = `🥾 Punches: ${punches}`;
+}
+
 function renderTabs() {
-    const tabContainer = document.createElement("div");
-    tabContainer.id = "tab-container";
-    tabContainer.style.position = "absolute";
-    tabContainer.style.top = "0";
-    tabContainer.style.left = "0";
-    tabContainer.style.width = "100%";
-    tabContainer.style.display = "flex";
-    tabContainer.style.justifyContent = "space-around";
-    tabContainer.style.background = "#eee";
-    tabContainer.style.zIndex = "9999";
+    const tabBar = document.createElement("div");
+    tabBar.id = "tab-container";
+    tabBar.style.position = "absolute";
+    tabBar.style.bottom = "0";
+    tabBar.style.left = "0";
+    tabBar.style.width = "100%";
+    tabBar.style.display = "flex";
+    tabBar.style.justifyContent = "space-around";
+    tabBar.style.background = "#222";
+    tabBar.style.zIndex = "1000";
 
     ["game", "leaderboard", "info"].forEach(tab => {
         const btn = document.createElement("button");
-        btn.innerText = tab.charAt(0).toUpperCase() + tab.slice(1);
+        btn.innerText = tab.toUpperCase();
         btn.style.flex = "1";
-        btn.style.padding = "10px";
-        btn.style.fontSize = "1em";
+        btn.style.padding = "12px";
+        btn.style.fontSize = "14px";
         btn.style.border = "none";
-        btn.style.background = tab === activeTab ? "#ddd" : "#eee";
+        btn.style.color = "#fff";
+        btn.style.background = (tab === activeTab) ? "#444" : "#222";
         btn.onclick = () => {
             activeTab = tab;
             showTab(tab);
-            document.querySelectorAll("#tab-container button").forEach(b => b.style.background = "#eee");
-            btn.style.background = "#ddd";
+            document.querySelectorAll("#tab-container button").forEach(b => b.style.background = "#222");
+            btn.style.background = "#444";
         };
-        tabContainer.appendChild(btn);
+        tabBar.appendChild(btn);
     });
 
-    document.body.appendChild(tabContainer);
-
-    const userOverlay = document.createElement("div");
-    userOverlay.innerText = `👤 Player: ${storedUsername}`;
-    userOverlay.style.position = "absolute";
-    userOverlay.style.top = "40px";
-    userOverlay.style.left = "0";
-    userOverlay.style.width = "100%";
-    userOverlay.style.textAlign = "center";
-    userOverlay.style.fontSize = "16px";
-    userOverlay.style.fontFamily = "Arial";
-    userOverlay.style.background = "#fff";
-    userOverlay.style.zIndex = "9998";
-    userOverlay.style.padding = "5px 0";
-    userOverlay.id = "username-display";
-    document.body.appendChild(userOverlay);
+    document.body.appendChild(tabBar);
 }
 
 function showTab(tab, scene = null) {
@@ -154,10 +149,11 @@ function showTab(tab, scene = null) {
         const container = document.createElement("div");
         container.id = "leaderboard-container";
         container.style.position = "absolute";
-        container.style.top = "70px";
+        container.style.top = "72px";
+        container.style.bottom = "48px";
         container.style.left = "0";
         container.style.width = "100%";
-        container.style.height = "calc(100% - 70px)";
+        container.style.overflow = "hidden";
         container.style.zIndex = "999";
 
         const iframe = document.createElement("iframe");
@@ -172,21 +168,20 @@ function showTab(tab, scene = null) {
         const info = document.createElement("div");
         info.id = "info-container";
         info.style.position = "absolute";
-        info.style.top = "70px";
+        info.style.top = "72px";
+        info.style.bottom = "48px";
         info.style.left = "0";
         info.style.width = "100%";
-        info.style.height = "calc(100% - 70px)";
-        info.style.background = "#fefefe";
         info.style.padding = "20px";
+        info.style.background = "#fff";
         info.style.fontFamily = "Arial";
-        info.style.fontSize = "1em";
         info.style.overflowY = "auto";
         info.style.zIndex = "999";
         info.innerHTML = `
-            <h2>👾 TrumpToss Game</h2>
-            <p>Created by @mora_dev</p>
-            <p>Contact: <a href="https://t.me/mora_dev" target="_blank">@mora_dev</a></p>
-            <p>© 2025 TrumpToss</p>
+            <h2>👟 TrumpToss</h2>
+            <p>Throw shoes at Trump. Earn points. Compete on the leaderboard.</p>
+            <p>🏗 <b>Upcoming Updates</b>: Event drops, airdrops, collectibles.</p>
+            <p>🤖 Bot powered by Telegram Mini App tech.</p>
         `;
         document.body.appendChild(info);
     }
@@ -200,11 +195,6 @@ function showGameUI(scene) {
         .setScale(trumpScale)
         .setOrigin(0.5)
         .setInteractive({ useHandCursor: true });
-
-    punchesText = scene.add.text(20, 80, "Punches: " + punches, {
-        fontSize: Math.round(scene.scale.width * 0.05) + "px",
-        fill: "#000"
-    });
 
     for (let i = 1; i <= 4; i++) {
         punchSounds.push(scene.sound.add("punch" + i));
@@ -231,12 +221,12 @@ function showGameUI(scene) {
 
 function handlePunch() {
     punches++;
-    punchesText.setText("Punches: " + punches);
+    updatePunchDisplay();
     localStorage.setItem("punches", punches);
 
     if (soundEnabled) {
-        const randomSound = Phaser.Math.RND.pick(punchSounds);
-        randomSound.play();
+        const sound = Phaser.Math.RND.pick(punchSounds);
+        sound.play();
     }
 
     if (!hitCooldown) {
@@ -248,16 +238,11 @@ function handlePunch() {
         }, 200);
     }
 
-    console.log(`📤 Submitting score for ${storedUsername}: ${punches} punches`);
-
     fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: storedUsername, score: punches })
-    })
-    .then(res => res.json())
-    .then(data => console.log(`✅ Server response for ${storedUsername}:`, data))
-    .catch(err => console.error("❌ Error submitting score:", err));
+        body: JSON.stringify({ username: storedUsername, user_id: userId, score: punches })
+    });
 }
 
 function update() {
