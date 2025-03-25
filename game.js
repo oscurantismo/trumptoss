@@ -1,27 +1,27 @@
-// game.js – final version with original layout, JWT support, and working leaderboard + cursor tracking
+// === game.js ===
 
 let game;
 let punches = 0;
-let username = "Anonymous";
 let activeTab = "game";
+let usernameDisplayText = null;
 
 window.onload = () => {
-  const width = window.innerWidth;
-  const height = window.innerHeight;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
 
-  const gameConfig = {
-    type: Phaser.AUTO,
-    width: width,
-    height: height,
-    backgroundColor: "#ffffff",
-    scene: {
-      preload,
-      create,
-      update,
-    },
-  };
+    const gameConfig = {
+        type: Phaser.AUTO,
+        width: width,
+        height: height,
+        backgroundColor: "#ffffff",
+        scene: {
+            preload,
+            create,
+            update
+        }
+    };
 
-  game = new Phaser.Game(gameConfig);
+    game = new Phaser.Game(gameConfig);
 };
 
 let trump, shoeCursor, punchesText;
@@ -31,161 +31,202 @@ let trumpHitTexture = "trump_hit";
 let hitCooldown = false;
 let soundEnabled = true;
 let soundButton;
+let storedUsername = "Anonymous";
 
 function preload() {
-  this.load.image("trump", "trump.png");
-  this.load.image("trump_hit", "trump_hit.png");
-  this.load.image("shoe", "shoe.png");
-  this.load.image("sound_on", "sound_on.png");
-  this.load.image("sound_off", "sound_off.png");
+    this.load.image("trump", "trump.png");
+    this.load.image("trump_hit", "trump_hit.png");
+    this.load.image("shoe", "shoe.png");
+    this.load.image("sound_on", "sound_on.png");
+    this.load.image("sound_off", "sound_off.png");
 
-  for (let i = 1; i <= 4; i++) {
-    this.load.audio("punch" + i, `punch${i}.mp3`);
-  }
+    for (let i = 1; i <= 4; i++) {
+        this.load.audio("punch" + i, "punch" + i + ".mp3");
+    }
 }
 
 function create() {
-  decodeToken();
-  renderTabs();
-  showTab("game", this);
-  displayUsername();
-}
+    Telegram.WebApp.ready();
+    console.log("✅ Telegram WebApp ready");
 
-function decodeToken() {
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get("token");
+    const initUser = Telegram.WebApp.initDataUnsafe?.user;
+    storedUsername = initUser?.username || "Anonymous";
+    console.log("👤 Username for registration:", storedUsername);
 
-  if (token && window.jwt_decode) {
-    try {
-      const decoded = jwt_decode(token);
-      console.log("✅ Decoded JWT:", decoded);
-      if (decoded.username) {
-        username = decoded.username;
-      }
-    } catch (e) {
-      console.error("❌ Invalid JWT token", e);
-    }
-  } else {
-    console.warn("⚠️ No token found in URL");
-  }
-}
+    fetch("https://trumptossleaderboard-production.up.railway.app/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: storedUsername })
+    })
+    .then(res => res.json())
+    .then(data => console.log("📝 Register result:", data))
+    .catch(err => console.error("❌ Register error:", err));
 
-function displayUsername() {
-  const tag = document.createElement("div");
-  tag.innerText = `👤 ${username}`;
-  tag.style.position = "absolute";
-  tag.style.top = "50px";
-  tag.style.left = "0";
-  tag.style.width = "100%";
-  tag.style.textAlign = "center";
-  tag.style.fontSize = "16px";
-  tag.style.fontWeight = "bold";
-  tag.style.color = "#333";
-  tag.style.background = "#ffffffcc";
-  tag.style.padding = "6px 10px";
-  tag.style.zIndex = "1000";
-  document.body.appendChild(tag);
+    renderTabs();
+    showTab("game", this);
 }
 
 function renderTabs() {
-  const tabContainer = document.createElement("div");
-  tabContainer.id = "tab-container";
-  tabContainer.style.position = "absolute";
-  tabContainer.style.top = "0";
-  tabContainer.style.left = "0";
-  tabContainer.style.width = "100%";
-  tabContainer.style.display = "flex";
-  tabContainer.style.justifyContent = "center";
-  tabContainer.style.backgroundColor = "#eee";
+    const tabContainer = document.createElement("div");
+    tabContainer.id = "tab-container";
+    tabContainer.style.position = "absolute";
+    tabContainer.style.top = "0";
+    tabContainer.style.left = "0";
+    tabContainer.style.width = "100%";
+    tabContainer.style.display = "flex";
+    tabContainer.style.justifyContent = "space-around";
+    tabContainer.style.background = "#eee";
+    tabContainer.style.zIndex = "9999";
 
-  ["game", "leaderboard"].forEach((tab) => {
-    const button = document.createElement("button");
-    button.innerText = tab.charAt(0).toUpperCase() + tab.slice(1);
-    button.style.margin = "10px";
-    button.onclick = () => showTab(tab, game.scene.scenes[0]);
-    tabContainer.appendChild(button);
-  });
+    ["game", "leaderboard", "info"].forEach(tab => {
+        const btn = document.createElement("button");
+        btn.innerText = tab.charAt(0).toUpperCase() + tab.slice(1);
+        btn.style.flex = "1";
+        btn.style.padding = "10px";
+        btn.style.fontSize = "1em";
+        btn.style.border = "none";
+        btn.style.background = tab === activeTab ? "#ddd" : "#eee";
+        btn.onclick = () => {
+            activeTab = tab;
+            showTab(tab);
+            document.querySelectorAll("#tab-container button").forEach(b => b.style.background = "#eee");
+            btn.style.background = "#ddd";
+        };
+        tabContainer.appendChild(btn);
+    });
 
-  document.body.appendChild(tabContainer);
+    document.body.appendChild(tabContainer);
 }
 
-function showTab(tabName, scene) {
-  activeTab = tabName;
-  if (tabName === "game") {
-    setupGame(scene);
-  } else if (tabName === "leaderboard") {
-    window.location.href = "https://trumptossleaderboard-production.up.railway.app/leaderboard-page";
-  }
+function showTab(tab, scene = null) {
+    ["game-container", "leaderboard-container", "info-container"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    });
+
+    if (tab === "game" && scene) {
+        showGameUI(scene);
+    } else if (tab === "leaderboard") {
+        const container = document.createElement("div");
+        container.id = "leaderboard-container";
+        container.style.position = "absolute";
+        container.style.top = "40px";
+        container.style.left = "0";
+        container.style.width = "100%";
+        container.style.height = "calc(100% - 40px)";
+        container.style.zIndex = "999";
+
+        const iframe = document.createElement("iframe");
+        iframe.src = "https://trumptossleaderboard-production.up.railway.app/leaderboard-page";
+        iframe.style.width = "100%";
+        iframe.style.height = "100%";
+        iframe.style.border = "none";
+
+        container.appendChild(iframe);
+        document.body.appendChild(container);
+    } else if (tab === "info") {
+        const info = document.createElement("div");
+        info.id = "info-container";
+        info.style.position = "absolute";
+        info.style.top = "40px";
+        info.style.left = "0";
+        info.style.width = "100%";
+        info.style.height = "calc(100% - 40px)";
+        info.style.background = "#fefefe";
+        info.style.padding = "20px";
+        info.style.fontFamily = "Arial";
+        info.style.fontSize = "1em";
+        info.style.overflowY = "auto";
+        info.style.zIndex = "999";
+        info.innerHTML = `
+            <h2>👾 TrumpToss Game</h2>
+            <p>Created by @mora_dev</p>
+            <p>Contact: <a href="https://t.me/mora_dev" target="_blank">@mora_dev</a></p>
+            <p>© 2025 TrumpToss</p>
+        `;
+        document.body.appendChild(info);
+    }
 }
 
-function setupGame(scene) {
-  trump = scene.add.sprite(400, 300, "trump").setInteractive();
-  shoeCursor = scene.add.sprite(400, 600, "shoe");
+function showGameUI(scene) {
+    const savedScore = localStorage.getItem("punches");
+    if (savedScore !== null) punches = parseInt(savedScore);
 
-  for (let i = 1; i <= 4; i++) {
-    punchSounds.push(scene.sound.add("punch" + i));
-  }
+    const targetHeight = scene.scale.height * 0.6;
+    const trumpScale = targetHeight / scene.textures.get("trump").getSourceImage().height;
 
-  trump.on("pointerdown", () => handlePunch(scene));
+    trump = scene.add.image(scene.scale.width / 2, scene.scale.height / 2, trumpOriginalTexture)
+        .setScale(trumpScale)
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true });
 
-  punches = parseInt(localStorage.getItem("punches")) || 0;
-  punchesText = scene.add.text(20, 90, "Punches: " + punches, {
-    fontSize: "24px",
-    fill: "#000"
-  });
+    usernameDisplayText = scene.add.text(20, 20, `Player: ${storedUsername}`, {
+        fontSize: Math.round(scene.scale.width * 0.04) + "px",
+        fill: "#000"
+    });
 
-  soundButton = scene.add.image(scene.sys.game.config.width - 40, 40, "sound_on").setInteractive().setScale(0.5);
-  soundButton.on("pointerdown", () => toggleSound());
+    punchesText = scene.add.text(20, 50 + usernameDisplayText.height, "Punches: " + punches, {
+        fontSize: Math.round(scene.scale.width * 0.05) + "px",
+        fill: "#000"
+    });
 
-  // hide default cursor, use shoe sprite instead
-  scene.input.setDefaultCursor("none");
+    for (let i = 1; i <= 4; i++) {
+        punchSounds.push(scene.sound.add("punch" + i));
+    }
+
+    scene.input.setDefaultCursor("none");
+    shoeCursor = scene.add.image(scene.input.activePointer.x, scene.input.activePointer.y, "shoe")
+        .setScale(0.5)
+        .setDepth(999);
+
+    const iconSize = 50;
+    soundButton = scene.add.image(scene.scale.width - iconSize / 2 - 20, iconSize / 2 + 60, "sound_on")
+        .setInteractive()
+        .setDisplaySize(iconSize, iconSize)
+        .setOrigin(0.5);
+
+    soundButton.on("pointerdown", () => {
+        soundEnabled = !soundEnabled;
+        soundButton.setTexture(soundEnabled ? "sound_on" : "sound_off");
+    });
+
+    trump.on("pointerdown", () => handlePunch());
 }
 
-function toggleSound() {
-  soundEnabled = !soundEnabled;
-  const texture = soundEnabled ? "sound_on" : "sound_off";
-  soundButton.setTexture(texture);
-}
+function handlePunch() {
+    punches++;
+    punchesText.setText("Punches: " + punches);
+    localStorage.setItem("punches", punches);
 
-function handlePunch(scene) {
-  punches++;
-  punchesText.setText("Punches: " + punches);
-  localStorage.setItem("punches", punches);
+    if (soundEnabled) {
+        const randomSound = Phaser.Math.RND.pick(punchSounds);
+        randomSound.play();
+    }
 
-  if (soundEnabled && punchSounds.length > 0) {
-    const randomSound = Phaser.Math.RND.pick(punchSounds);
-    randomSound.play();
-  }
+    if (!hitCooldown) {
+        hitCooldown = true;
+        trump.setTexture(trumpHitTexture);
+        setTimeout(() => {
+            trump.setTexture(trumpOriginalTexture);
+            hitCooldown = false;
+        }, 200);
+    }
 
-  if (!hitCooldown) {
-    hitCooldown = true;
-    trump.setTexture(trumpHitTexture);
-    setTimeout(() => {
-      trump.setTexture(trumpOriginalTexture);
-      hitCooldown = false;
-    }, 200);
-  }
+    console.log("📤 Submitting score:", punches, "as", storedUsername);
 
-  submitScore(punches);
-}
-
-function submitScore(score) {
-  console.log(`📤 Submitting score: ${score} for ${username}`);
-
-  fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, score }),
-  })
-    .then((res) => res.json())
-    .then((data) => console.log("✅ Score submitted:", data))
-    .catch((err) => console.error("❌ Error submitting score:", err));
+    fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: storedUsername, score: punches })
+    })
+    .then(res => res.json())
+    .then(data => console.log("✅ Score submitted:", data))
+    .catch(err => console.error("❌ Error submitting score:", err));
 }
 
 function update() {
-  if (shoeCursor) {
-    const pointer = game.input.activePointer;
-    shoeCursor.x = pointer.x;
-    shoeCursor.y = pointer.y;
-  }
+    if (shoeCursor && game && game.input && game.input.activePointer) {
+        const pointer = game.input.activePointer;
+        shoeCursor.setPosition(pointer.x, pointer.y);
+    }
 }
