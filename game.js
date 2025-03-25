@@ -13,11 +13,8 @@ window.onload = () => {
         width: width,
         height: height,
         backgroundColor: "#ffffff",
-        scene: {
-            preload,
-            create,
-            update
-        }
+        scale: { mode: Phaser.Scale.RESIZE },
+        scene: { preload, create, update }
     };
 
     game = new Phaser.Game(gameConfig);
@@ -32,10 +29,8 @@ function preload() {
     for (let i = 1; i <= 30; i++) {
         const frameName = `trump${i}`;
         trumpFrames.push(frameName);
-        // Note: use encoded space %20 for "trump (i).png"
         this.load.image(frameName, `trump-images/trump%20(${i}).png`);
     }
-
     this.load.image("shoe", "shoe.png");
     this.load.image("sound_on", "sound_on.png");
     this.load.image("sound_off", "sound_off.png");
@@ -73,14 +68,14 @@ function create() {
         }
         renderTopBar();
         renderTabs();
-        showTab("game", this);
         renderShareButton();
+        showTab("game", this);
     });
 }
 
 function renderTopBar() {
     const top = document.createElement("div");
-    top.style.position = "absolute";
+    top.style.position = "fixed";
     top.style.top = "0";
     top.style.left = "1rem";
     top.style.background = "#fff";
@@ -95,7 +90,7 @@ function renderTopBar() {
 
     const punchBar = document.createElement("div");
     punchBar.id = "punch-bar";
-    punchBar.style.position = "absolute";
+    punchBar.style.position = "fixed";
     punchBar.style.top = "50px";
     punchBar.style.left = "0";
     punchBar.style.width = "100%";
@@ -118,7 +113,7 @@ function updatePunchDisplay() {
 function renderTabs() {
     const tabBar = document.createElement("div");
     tabBar.id = "tab-container";
-    tabBar.style.position = "absolute";
+    tabBar.style.position = "fixed";
     tabBar.style.bottom = "0";
     tabBar.style.left = "0";
     tabBar.style.width = "100%";
@@ -148,91 +143,10 @@ function renderTabs() {
     document.body.appendChild(tabBar);
 }
 
-function showTab(tab, scene = null) {
-    ["game-container", "leaderboard-container", "info-container"].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.remove();
-    });
-
-    if (tab === "game" && scene) {
-        showGameUI(scene);
-    } else if (tab === "leaderboard") {
-        const container = document.createElement("div");
-        container.id = "leaderboard-container";
-        container.style.position = "absolute";
-        container.style.top = "72px";
-        container.style.bottom = "48px";
-        container.style.left = "0";
-        container.style.width = "100%";
-        container.style.overflow = "hidden";
-        container.style.zIndex = "999";
-
-        const iframe = document.createElement("iframe");
-        iframe.src = "https://trumptossleaderboard-production.up.railway.app/leaderboard-page";
-        iframe.style.width = "100%";
-        iframe.style.height = "100%";
-        iframe.style.border = "none";
-
-        container.appendChild(iframe);
-        document.body.appendChild(container);
-    } else if (tab === "info") {
-        const info = document.createElement("div");
-        info.id = "info-container";
-        info.style.position = "absolute";
-        info.style.top = "72px";
-        info.style.bottom = "48px";
-        info.style.left = "0";
-        info.style.width = "100%";
-        info.style.padding = "20px";
-        info.style.background = "#ffffff";
-        info.style.fontFamily = "Arial";
-        info.style.overflowY = "auto";
-        info.style.zIndex = "999";
-        info.innerHTML = `
-            <h2>👟 TrumpToss</h2>
-            <p>Throw shoes at Trump. Earn points. Compete on the leaderboard.</p>
-            <p>🏗 <b>Upcoming:</b> Event drops, airdrops, collectibles</p>
-            <p>🤖 Powered by Telegram Mini Apps</p>
-        `;
-        document.body.appendChild(info);
-    }
-}
-
-function showGameUI(scene) {
-    const trumpScale = (scene.scale.width * 0.7) / scene.textures.get("trump1").getSourceImage().width;
-
-    trump = scene.add.image(scene.scale.width / 2, scene.scale.height / 2, `trump${Math.min(punches, 30)}`)
-        .setScale(trumpScale)
-        .setOrigin(0.5)
-        .setInteractive({ useHandCursor: true });
-
-    for (let i = 1; i <= 4; i++) {
-        punchSounds.push(scene.sound.add("punch" + i));
-    }
-
-    scene.input.setDefaultCursor("none");
-    shoeCursor = scene.add.image(scene.input.activePointer.x, scene.input.activePointer.y, "shoe")
-        .setScale(0.5)
-        .setDepth(999);
-
-    const iconSize = 50;
-    soundButton = scene.add.image(scene.scale.width - iconSize / 2 - 20, iconSize / 2 + 60, "sound_on")
-        .setInteractive()
-        .setDisplaySize(iconSize, iconSize)
-        .setOrigin(0.5);
-
-    soundButton.on("pointerdown", () => {
-        soundEnabled = !soundEnabled;
-        soundButton.setTexture(soundEnabled ? "sound_on" : "sound_off");
-    });
-
-    trump.on("pointerdown", () => handlePunch());
-}
-
 function renderShareButton() {
     const btn = document.createElement("button");
     btn.innerText = "📣 Share Score";
-    btn.style.position = "absolute";
+    btn.style.position = "fixed";
     btn.style.bottom = "60px";
     btn.style.right = "20px";
     btn.style.padding = "10px 14px";
@@ -260,6 +174,87 @@ function renderShareButton() {
     document.body.appendChild(btn);
 }
 
+function showTab(tab, scene = null) {
+    ["game-container", "leaderboard-container", "info-container"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    });
+
+    if (tab === "game" && scene) {
+        showGameUI(scene);
+    } else if (tab === "leaderboard") {
+        const container = document.createElement("div");
+        container.id = "leaderboard-container";
+        container.style.position = "fixed";
+        container.style.top = "72px";
+        container.style.bottom = "48px";
+        container.style.left = "0";
+        container.style.width = "100%";
+        container.style.zIndex = "999";
+
+        const iframe = document.createElement("iframe");
+        iframe.src = "https://trumptossleaderboard-production.up.railway.app/leaderboard-page";
+        iframe.style.width = "100%";
+        iframe.style.height = "100%";
+        iframe.style.border = "none";
+
+        container.appendChild(iframe);
+        document.body.appendChild(container);
+    } else if (tab === "info") {
+        const info = document.createElement("div");
+        info.id = "info-container";
+        info.style.position = "fixed";
+        info.style.top = "72px";
+        info.style.bottom = "48px";
+        info.style.left = "0";
+        info.style.width = "100%";
+        info.style.padding = "20px";
+        info.style.background = "#ffffff";
+        info.style.fontFamily = "Arial";
+        info.style.overflowY = "auto";
+        info.style.zIndex = "999";
+        info.innerHTML = `
+            <h2>👟 TrumpToss</h2>
+            <p>Throw shoes at Trump. Earn points. Compete on the leaderboard.</p>
+            <p>🏗 <b>Upcoming:</b> Event drops, airdrops, collectibles</p>
+            <p>🤖 Powered by Telegram Mini Apps</p>
+        `;
+        document.body.appendChild(info);
+    }
+}
+
+function showGameUI(scene) {
+    const targetImage = `trump${Math.min(punches, 30)}`;
+    const imageWidth = scene.textures.get(targetImage).getSourceImage().width;
+    const trumpScale = (scene.scale.width * 0.7) / imageWidth;
+
+    trump = scene.add.image(scene.scale.width / 2, scene.scale.height / 2.5, targetImage)
+        .setScale(trumpScale)
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true });
+
+    for (let i = 1; i <= 4; i++) {
+        punchSounds.push(scene.sound.add("punch" + i));
+    }
+
+    scene.input.setDefaultCursor("none");
+    shoeCursor = scene.add.image(scene.input.activePointer.x, scene.input.activePointer.y, "shoe")
+        .setScale(0.5)
+        .setDepth(999);
+
+    const iconSize = 50;
+    soundButton = scene.add.image(scene.scale.width - iconSize / 2 - 20, iconSize / 2 + 60, "sound_on")
+        .setInteractive()
+        .setDisplaySize(iconSize, iconSize)
+        .setOrigin(0.5);
+
+    soundButton.on("pointerdown", () => {
+        soundEnabled = !soundEnabled;
+        soundButton.setTexture(soundEnabled ? "sound_on" : "sound_off");
+    });
+
+    trump.on("pointerdown", () => handlePunch());
+}
 
 function handlePunch() {
     punches++;
