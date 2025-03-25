@@ -1,205 +1,115 @@
-let game;
-let punches = 0;
 let username = "Anonymous";
-let activeTab = "game";
-
-window.onload = () => {
-  const width = window.innerWidth;
-  const height = window.innerHeight;
-
-  const gameConfig = {
-    type: Phaser.AUTO,
-    width: width,
-    height: height,
-    backgroundColor: "#ffffff",
-    scene: {
-      preload,
-      create,
-      update,
-    },
-  };
-
-  game = new Phaser.Game(gameConfig);
-};
-
-let trump, shoeCursor, punchesText;
-let punchSounds = [];
-let trumpOriginalTexture = "trump";
-let trumpHitTexture = "trump_hit";
+let userId = null;
+let punches = 0;
+let punchesText;
 let hitCooldown = false;
 let soundEnabled = true;
-let soundButton;
+
+let trump;
+let trumpOriginalTexture = "trump";
+let trumpHitTexture = "trump_hit";
+let punchSounds = [];
+
+// Decode JWT token from URL and extract username
+function decodeToken() {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("token");
+
+  if (token && window.jwt_decode) {
+    try {
+      const decoded = jwt_decode(token);
+      username = decoded.username || decoded.name || "Anonymous";
+      userId = decoded.user_id || null;
+      console.log("✅ Decoded user:", username);
+    } catch (err) {
+      console.error("❌ Invalid JWT token", err);
+    }
+  } else {
+    console.warn("⚠️ No token provided in URL");
+  }
+}
+
+// Show username at the top-left
+function showUsername() {
+  const tag = document.createElement("div");
+  tag.innerText = `👤 ${username}`;
+  tag.style.position = "absolute";
+  tag.style.top = "10px";
+  tag.style.left = "10px";
+  tag.style.fontSize = "16px";
+  tag.style.fontWeight = "bold";
+  tag.style.color = "#333";
+  tag.style.background = "#ffffffcc";
+  tag.style.padding = "6px 10px";
+  tag.style.borderRadius = "10px";
+  tag.style.zIndex = "1000";
+  document.body.appendChild(tag);
+}
+
+// Submit score to Railway leaderboard
+function submitScore(score) {
+  console.log(`📤 Submitting score: ${score} for ${username}`);
+
+  fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, score }),
+  })
+    .then((res) => res.json())
+    .then((data) => console.log("✅ Score submitted:", data))
+    .catch((err) => console.error("❌ Error submitting score:", err));
+}
+
+// Game logic setup
+decodeToken();
+showUsername();
+
+const config = {
+  type: Phaser.AUTO,
+  width: window.innerWidth,
+  height: window.innerHeight,
+  scene: {
+    preload,
+    create,
+    update
+  },
+  physics: {
+    default: "arcade",
+    arcade: {
+      gravity: { y: 600 },
+      debug: false
+    }
+  }
+};
+
+const game = new Phaser.Game(config);
 
 function preload() {
   this.load.image("trump", "trump.png");
   this.load.image("trump_hit", "trump_hit.png");
   this.load.image("shoe", "shoe.png");
-  this.load.image("sound_on", "sound_on.png");
-  this.load.image("sound_off", "sound_off.png");
-  for (let i = 1; i <= 4; i++) {
-    this.load.audio("punch" + i, `punch${i}.mp3`);
-  }
+  this.load.audio("punch1", "punch1.mp3");
+  this.load.audio("punch2", "punch2.mp3");
+  this.load.audio("punch3", "punch3.mp3");
 }
 
 function create() {
-  decodeToken();
-  renderTabs();
-  showTab("game", this);
-}
+  trump = this.physics.add.sprite(400, 300, "trump").setInteractive();
+  const shoe = this.physics.add.sprite(400, 600, "shoe").setCollideWorldBounds(true);
 
+  punchSounds = [
+    this.sound.add("punch1"),
+    this.sound.add("punch2"),
+    this.sound.add("punch3")
+  ];
 
-function decodeToken() {
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get("token");
+  trump.on("pointerdown", handlePunch.bind(this));
 
-  if (token) {
-    try {
-      const decoded = jwt_decode(token);
-      console.log("🔑 Decoded JWT:", decoded);
-      if (decoded.username) {
-        username = decoded.username;
-      }
-    } catch (e) {
-      console.error("❌ Invalid JWT token", e);
-    }
-  } else {
-    console.warn("⚠️ No token found in URL");
-  }
-}
-
-console.log("👤 Player:", username);
-
-function renderTabs() {
-  const tabContainer = document.createElement("div");
-  tabContainer.id = "tab-container";
-  tabContainer.style.position = "absolute";
-  tabContainer.style.top = "0";
-  tabContainer.style.left = "0";
-  tabContainer.style.width = "100%";
-  tabContainer.style.display = "flex";
-  tabContainer.style.justifyContent = "space-around";
-  tabContainer.style.background = "#eee";
-  tabContainer.style.zIndex = "9999";
-
-  ["game", "leaderboard", "info"].forEach((tab) => {
-    const btn = document.createElement("button");
-    btn.innerText = tab.charAt(0).toUpperCase() + tab.slice(1);
-    btn.style.flex = "1";
-    btn.style.padding = "10px";
-    btn.style.fontSize = "1em";
-    btn.style.border = "none";
-    btn.style.background = tab === activeTab ? "#ddd" : "#eee";
-    btn.onclick = () => {
-      activeTab = tab;
-      showTab(tab);
-      document
-        .querySelectorAll("#tab-container button")
-        .forEach((b) => (b.style.background = "#eee"));
-      btn.style.background = "#ddd";
-    };
-    tabContainer.appendChild(btn);
+  punches = parseInt(localStorage.getItem("punches")) || 0;
+  punchesText = this.add.text(20, 50, "Punches: " + punches, {
+    fontSize: "24px",
+    fill: "#000"
   });
-
-  document.body.appendChild(tabContainer);
-}
-
-function showTab(tab, scene = null) {
-  ["leaderboard-container", "info-container"].forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.remove();
-  });
-
-  if (tab === "game" && scene) {
-    showGameUI(scene);
-  } else if (tab === "leaderboard") {
-    const container = document.createElement("div");
-    container.id = "leaderboard-container";
-    container.style.position = "absolute";
-    container.style.top = "40px";
-    container.style.left = "0";
-    container.style.width = "100%";
-    container.style.height = "calc(100% - 40px)";
-    container.style.zIndex = "999";
-
-    const iframe = document.createElement("iframe");
-    iframe.src =
-      "https://trumptossleaderboard-production.up.railway.app/leaderboard-page";
-    iframe.style.width = "100%";
-    iframe.style.height = "100%";
-    iframe.style.border = "none";
-
-    container.appendChild(iframe);
-    document.body.appendChild(container);
-  } else if (tab === "info") {
-    const info = document.createElement("div");
-    info.id = "info-container";
-    info.style.position = "absolute";
-    info.style.top = "40px";
-    info.style.left = "0";
-    info.style.width = "100%";
-    info.style.height = "calc(100% - 40px)";
-    info.style.background = "#fefefe";
-    info.style.padding = "20px";
-    info.style.fontFamily = "Arial";
-    info.style.fontSize = "1em";
-    info.style.overflowY = "auto";
-    info.style.zIndex = "999";
-    info.innerHTML = `
-      <h2>👾 TrumpToss Game</h2>
-      <p>Created by @mora_dev</p>
-      <p>Contact: <a href="https://t.me/mora_dev" target="_blank">@mora_dev</a></p>
-      <p>© 2025 TrumpToss</p>
-    `;
-    document.body.appendChild(info);
-  }
-}
-
-function showGameUI(scene) {
-  const savedScore = localStorage.getItem("punches");
-  if (savedScore !== null) punches = parseInt(savedScore);
-
-  const targetHeight = scene.scale.height * 0.6;
-  const trumpScale =
-    targetHeight / scene.textures.get("trump").getSourceImage().height;
-
-  trump = scene.add
-    .image(scene.scale.width / 2, scene.scale.height / 2, trumpOriginalTexture)
-    .setScale(trumpScale)
-    .setOrigin(0.5)
-    .setInteractive({ useHandCursor: true });
-
-  punchesText = scene.add.text(20, 50, "Punches: " + punches, {
-    fontSize: Math.round(scene.scale.width * 0.05) + "px",
-    fill: "#000",
-  });
-
-  for (let i = 1; i <= 4; i++) {
-    punchSounds.push(scene.sound.add("punch" + i));
-  }
-
-  scene.input.setDefaultCursor("none");
-  shoeCursor = scene.add
-    .image(scene.input.activePointer.x, scene.input.activePointer.y, "shoe")
-    .setScale(0.5)
-    .setDepth(999);
-
-  const iconSize = 50;
-  soundButton = scene.add
-    .image(
-      scene.scale.width - iconSize / 2 - 20,
-      iconSize / 2 + 60,
-      "sound_on"
-    )
-    .setInteractive()
-    .setDisplaySize(iconSize, iconSize)
-    .setOrigin(0.5);
-
-  soundButton.on("pointerdown", () => {
-    soundEnabled = !soundEnabled;
-    soundButton.setTexture(soundEnabled ? "sound_on" : "sound_off");
-  });
-
-  trump.on("pointerdown", () => handlePunch());
 }
 
 function handlePunch() {
@@ -207,7 +117,7 @@ function handlePunch() {
   punchesText.setText("Punches: " + punches);
   localStorage.setItem("punches", punches);
 
-  if (soundEnabled) {
+  if (soundEnabled && punchSounds.length > 0) {
     const randomSound = Phaser.Math.RND.pick(punchSounds);
     randomSound.play();
   }
@@ -221,26 +131,9 @@ function handlePunch() {
     }, 200);
   }
 
-  console.log(`📤 Submitting score: ${punches} for ${username}`);
-
-  fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, score: punches }),
-  })
-    .then((res) => res.json())
-    .then((data) => console.log("✅ Score submitted:", data))
-    .catch((err) => console.error("❌ Error submitting score:", err));
+  submitScore(punches);
 }
 
 function update() {
-  if (
-    shoeCursor &&
-    game &&
-    game.input &&
-    game.input.activePointer
-  ) {
-    const pointer = game.input.activePointer;
-    shoeCursor.setPosition(pointer.x, pointer.y);
-  }
+  // No dynamic physics needed for now
 }
