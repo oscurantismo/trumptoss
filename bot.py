@@ -37,21 +37,23 @@ async def play(update: Update, context: ContextTypes.DEFAULT_TYPE):
     username = register_user(user_id, user.first_name, user.last_name, user.username)
     logger.info(f"🧾 User doc id: {username}")
 
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🎮 Play now!", callback_game={"game_short_name": GAME_SHORT_NAME})],
-        [
-            InlineKeyboardButton("📊 Leaderboard", callback_data="leaderboard"),
-            InlineKeyboardButton("ℹ️ About", callback_data="about")
-        ]
-    ])
+keyboard = InlineKeyboardMarkup([
+    [InlineKeyboardButton("🎮 Play now!", callback_game={"game_short_name": GAME_SHORT_NAME})],
+    [
+        InlineKeyboardButton("📊 Leaderboard", callback_data="leaderboard"),
+        InlineKeyboardButton("ℹ️ About", callback_data="about")
+    ]
+])
 
-    await context.bot.send_game(
-        chat_id=update.effective_chat.id,
-        game_short_name=GAME_SHORT_NAME,
-        reply_markup=keyboard,
-        protect_content=True,
-        disable_notification=True
-    )
+
+await context.bot.send_game(
+    chat_id=update.effective_chat.id,
+    game_short_name=GAME_SHORT_NAME,
+    reply_markup=keyboard,
+    protect_content=True,
+    disable_notification=True
+)
+
 
 # === /leaderboard ===
 async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
