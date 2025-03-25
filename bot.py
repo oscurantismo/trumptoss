@@ -43,9 +43,11 @@ async def play(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("ℹ️ About", callback_data="about")]
     ])
 
+    logger.info(f"▶️ Keyboard JSON: {keyboard.to_dict()}")
+
     await context.bot.send_game(
         chat_id=update.effective_chat.id,
-        game_short_name=GAME_SHORT_NAME,
+        game_short_name="TrumpToss",
         reply_markup=keyboard,
         protect_content=True,
         disable_notification=True
