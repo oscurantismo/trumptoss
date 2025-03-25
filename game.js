@@ -4,6 +4,7 @@ let game;
 let punches = 0;
 let activeTab = "game";
 let usernameDisplayText = null;
+let storedUsername = "Anonymous";
 
 window.onload = () => {
     const width = window.innerWidth;
@@ -31,7 +32,6 @@ let trumpHitTexture = "trump_hit";
 let hitCooldown = false;
 let soundEnabled = true;
 let soundButton;
-let storedUsername = "Anonymous";
 
 function preload() {
     this.load.image("trump", "trump.png");
@@ -50,7 +50,7 @@ function create() {
     console.log("✅ Telegram WebApp ready");
 
     const initUser = Telegram.WebApp.initDataUnsafe?.user;
-    storedUsername = initUser?.username || "Anonymous";
+    storedUsername = initUser?.username || `user_${initUser?.id || Math.floor(Math.random() * 10000)}`;
     console.log("👤 Username for registration:", storedUsername);
 
     fetch("https://trumptossleaderboard-production.up.railway.app/register", {
