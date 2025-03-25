@@ -59,7 +59,7 @@ function create() {
         body: JSON.stringify({ username: storedUsername })
     })
     .then(res => res.json())
-    .then(data => console.log("📝 Register result:", data))
+    .then(data => console.log(`📝 Register result for ${storedUsername}:`, data))
     .catch(err => console.error("❌ Register error:", err));
 
     renderTabs();
@@ -212,7 +212,7 @@ function handlePunch() {
         }, 200);
     }
 
-    console.log("📤 Submitting score:", punches, "as", storedUsername);
+    console.log(`📤 Submitting score for ${storedUsername}: ${punches} punches`);
 
     fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
         method: "POST",
@@ -220,7 +220,7 @@ function handlePunch() {
         body: JSON.stringify({ username: storedUsername, score: punches })
     })
     .then(res => res.json())
-    .then(data => console.log("✅ Score submitted:", data))
+    .then(data => console.log(`✅ Server response for ${storedUsername}:`, data))
     .catch(err => console.error("❌ Error submitting score:", err));
 }
 
