@@ -50,7 +50,15 @@ function create() {
     console.log("✅ Telegram WebApp ready");
 
     const initUser = Telegram.WebApp.initDataUnsafe?.user;
-    storedUsername = initUser?.username || `user_${initUser?.id || Math.floor(Math.random() * 10000)}`;
+    console.log("📦 Telegram WebApp.initDataUnsafe.user =", initUser);
+    if (initUser) {
+        storedUsername =
+            initUser.username ||
+            `${initUser.first_name || "user"}${initUser.last_name ? "_" + initUser.last_name : ""}` ||
+            `user_${initUser.id}`;
+    } else {
+        storedUsername = "anonymous_client";
+    }
     console.log("👤 Username for registration:", storedUsername);
 
     fetch("https://trumptossleaderboard-production.up.railway.app/register", {
