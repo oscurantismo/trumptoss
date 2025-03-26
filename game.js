@@ -206,22 +206,18 @@ function renderShareButton() {
     btn.style.borderRadius = "8px";
     btn.style.fontFamily = "'Arial Black', sans-serif";
     btn.style.zIndex = "1001";
+
     btn.onclick = () => {
-        Telegram.WebApp.showPopup({
-            title: "Share Score",
-            message: `Your current score is ${punches}. Want to share it with your friends?`,
-            buttons: [
-                { id: "share", type: "default", text: "Share" },
-                { type: "cancel" }
-            ]
-        }, (btnId) => {
-            if (btnId === "share") {
-                Telegram.WebApp.shareScore();
-            }
-        });
+        const gameLink = "https://t.me/TrumpToss_bot?game=trump_punch";
+        const message = `I punched ${punches} points in TrumpToss. Wanna punch to earn?\n👟 ${gameLink}`;
+        Telegram.WebApp.openTelegramLink(
+            `https://t.me/share/url?url=${encodeURIComponent(gameLink)}&text=${encodeURIComponent(message)}`
+        );
     };
+
     document.body.appendChild(btn);
 }
+
 
 function showTab(tab, scene = null) {
     ["game-container", "leaderboard-container", "info-container"].forEach(id => {
