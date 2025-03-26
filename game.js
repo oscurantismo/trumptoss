@@ -211,37 +211,6 @@ function renderShareButton() {
         const botLink = "https://t.me/TrumpToss_bot";
         const message = `I punched ${punches} points in TrumpToss. Wanna punch to earn?`;
 
-        const shareOptions = [
-            {
-                id: "telegram",
-                label: "Telegram",
-                url: `https://t.me/share/url?url=${encodeURIComponent(botLink)}&text=${encodeURIComponent(message)}`
-            },
-            {
-                id: "whatsapp",
-                label: "WhatsApp",
-                url: `https://api.whatsapp.com/send?text=${encodeURIComponent(message + ' ' + botLink)}`
-            },
-            {
-                id: "x",
-                label: "X (Twitter)",
-                url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(message + ' ' + botLink)}`
-            },
-            {
-                id: "discord",
-                label: "Discord",
-                url: `https://discord.com/channels/@me`
-            }
-        ];
-
-        const buttons = shareOptions.map(opt => ({
-            id: opt.id,
-            text: opt.label,
-            type: "default"
-        }));
-
-        buttons.push({ type: "cancel" });
-
         Telegram.WebApp.showPopup({
             title: "Share your score",
             message: `Choose where to share your ${punches} punches:`,
@@ -253,18 +222,18 @@ function renderShareButton() {
             ]
         }, (btnId) => {
             const links = {
-                telegram: `https://t.me/share/url?url=https://t.me/TrumpToss_bot&text=${encodeURIComponent(`I punched ${punches} points in TrumpToss. Wanna punch to earn?`)}`,
-                whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(`I punched ${punches} points in TrumpToss. Wanna punch to earn? https://t.me/TrumpToss_bot`)}`,
-                x: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`I punched ${punches} points in TrumpToss. Wanna punch to earn? https://t.me/TrumpToss_bot`)}`
+                telegram: `https://t.me/share/url?url=${encodeURIComponent(botLink)}&text=${encodeURIComponent(message)}`,
+                whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(message + ' ' + botLink)}`,
+                x: `https://twitter.com/intent/tweet?text=${encodeURIComponent(message + ' ' + botLink)}`
             };
             if (btnId && links[btnId]) {
                 window.open(links[btnId], "_blank");
             }
         });
-        
-        document.body.appendChild(btn);
-    }
+    };
 
+    document.body.appendChild(btn);
+}
 
 function renderResetButton() {
     const btn = document.createElement("button");
