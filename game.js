@@ -192,25 +192,78 @@ function renderTabs() {
     document.body.appendChild(tabBar);
 }
 
-Telegram.WebApp.showPopup({
-    title: "Share your score",
-    message: `Choose where to share your ${punches} punches:`,
-    buttons: [
-        { id: "telegram", type: "default", text: "Telegram" },
-        { id: "whatsapp", type: "default", text: "WhatsApp" },
-        { id: "x", type: "default", text: "X (Twitter)" },
-        { type: "cancel" }
-    ]
-}, (btnId) => {
-    const links = {
-        telegram: `https://t.me/share/url?url=https://t.me/TrumpToss_bot&text=${encodeURIComponent(`I punched ${punches} points in TrumpToss. Wanna punch to earn?`)}`,
-        whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(`I punched ${punches} points in TrumpToss. Wanna punch to earn? https://t.me/TrumpToss_bot`)}`,
-        x: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`I punched ${punches} points in TrumpToss. Wanna punch to earn? https://t.me/TrumpToss_bot`)}`
-    };
-    if (btnId && links[btnId]) {
-        window.open(links[btnId], "_blank");
+function renderShareButton() {
+    const btn = document.createElement("button");
+    btn.innerText = "📣 Share Score";
+    btn.style.position = "fixed";
+    btn.style.bottom = "60px";
+    btn.style.right = "20px";
+    btn.style.padding = "10px 14px";
+    btn.style.fontSize = "14px";
+    btn.style.background = "#0077cc";
+    btn.style.color = "#fff";
+    btn.style.border = "none";
+    btn.style.borderRadius = "8px";
+    btn.style.fontFamily = "'Arial Black', sans-serif";
+    btn.style.zIndex = "1001";
+
+    btn.onclick = () => {
+        const botLink = "https://t.me/TrumpToss_bot";
+        const message = `I punched ${punches} points in TrumpToss. Wanna punch to earn?`;
+
+        const shareOptions = [
+            {
+                id: "telegram",
+                label: "Telegram",
+                url: `https://t.me/share/url?url=${encodeURIComponent(botLink)}&text=${encodeURIComponent(message)}`
+            },
+            {
+                id: "whatsapp",
+                label: "WhatsApp",
+                url: `https://api.whatsapp.com/send?text=${encodeURIComponent(message + ' ' + botLink)}`
+            },
+            {
+                id: "x",
+                label: "X (Twitter)",
+                url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(message + ' ' + botLink)}`
+            },
+            {
+                id: "discord",
+                label: "Discord",
+                url: `https://discord.com/channels/@me`
+            }
+        ];
+
+        const buttons = shareOptions.map(opt => ({
+            id: opt.id,
+            text: opt.label,
+            type: "default"
+        }));
+
+        buttons.push({ type: "cancel" });
+
+        Telegram.WebApp.showPopup({
+            title: "Share your score",
+            message: `Choose where to share your ${punches} punches:`,
+            buttons: [
+                { id: "telegram", type: "default", text: "Telegram" },
+                { id: "whatsapp", type: "default", text: "WhatsApp" },
+                { id: "x", type: "default", text: "X (Twitter)" },
+                { type: "cancel" }
+            ]
+        }, (btnId) => {
+            const links = {
+                telegram: `https://t.me/share/url?url=https://t.me/TrumpToss_bot&text=${encodeURIComponent(`I punched ${punches} points in TrumpToss. Wanna punch to earn?`)}`,
+                whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(`I punched ${punches} points in TrumpToss. Wanna punch to earn? https://t.me/TrumpToss_bot`)}`,
+                x: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`I punched ${punches} points in TrumpToss. Wanna punch to earn? https://t.me/TrumpToss_bot`)}`
+            };
+            if (btnId && links[btnId]) {
+                window.open(links[btnId], "_blank");
+            }
+        });
+        
+        document.body.appendChild(btn);
     }
-});
 
 
 function renderResetButton() {
