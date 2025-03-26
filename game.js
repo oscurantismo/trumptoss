@@ -64,8 +64,8 @@ function removeLoader() {
 function preload() {
     this.load.image("trump1", "trump-images/trump%20(1).webp");
     this.load.image("shoe", "shoe.png");
-    this.load.image("sound_on", "sound_on.png");
-    this.load.image("sound_off", "sound_off.png");
+    this.load.image("sound_on", "sound_on.svg");
+    this.load.image("sound_off", "sound_off.svg");
     for (let i = 1; i <= 4; i++) {
         this.load.audio("punch" + i, "punch" + i + ".mp3");
     }
@@ -108,7 +108,7 @@ function create() {
 function renderTopBar() {
     const top = document.createElement("div");
     top.style.position = "fixed";
-    top.style.top = "0";
+    top.style.top = "0.5rem";
     top.style.left = "1rem";
     top.style.background = "#fff";
     top.style.color = "#000";
@@ -139,9 +139,9 @@ function renderTopBar() {
 
     const iconSize = 32;
     soundButton = document.createElement("img");
-    soundButton.src = "sound_on.png";
+    soundButton.src = "sound_on.svg";
     soundButton.style.position = "fixed";
-    soundButton.style.top = "8px";
+    soundButton.style.top = "calc(0.5rem + 4px)";
     soundButton.style.right = "12px";
     soundButton.style.width = iconSize + "px";
     soundButton.style.height = iconSize + "px";
@@ -149,7 +149,7 @@ function renderTopBar() {
     soundButton.style.zIndex = "1001";
     soundButton.onclick = () => {
         soundEnabled = !soundEnabled;
-        soundButton.src = soundEnabled ? "sound_on.png" : "sound_off.png";
+        soundButton.src = soundEnabled ? "sound_on.svg" : "sound_off.svg";
     };
     document.body.appendChild(soundButton);
 }
