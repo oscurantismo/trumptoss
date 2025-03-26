@@ -280,6 +280,7 @@ function showTab(tab, scene = null) {
         const container = document.createElement("div");
         container.id = "leaderboard-container";
         container.style.position = "fixed";
+        container.style.overflowY = "auto";
         container.style.top = "100px"; // below punch bar
         container.style.bottom = "48px"; // above nav tabs
         container.style.left = "0";
