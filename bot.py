@@ -1,5 +1,6 @@
 import os
 import logging
+import requests
 from telegram import (
     Update,
     InlineKeyboardMarkup,
@@ -38,15 +39,44 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=keyboard
     )
 
+# === Live leaderboard ===
+async def send_leaderboard(chat_id, context: ContextTypes.DEFAULT_TYPE, user_id: str):
+    try:
+        res = requests.get("https://trumptossleaderboard-production.up.railway.app/leaderboard")
+        scores = res.json()
+    except Exception as e:
+        await context.bot.send_message(chat_id, "❌ Failed to load leaderboard. Try again later.")
+        return
+
+    if not scores:
+        await context.bot.send_message(chat_id, "No scores yet.")
+        return
+
+    medals = ["🥇", "🥈", "🥉"]
+    msg = "🏆 <b>TrumpToss Leaderboard</b>\n\n"
+    for i, entry in enumerate(scores):
+        medal = medals[i] if i < 3 else f"{i+1}."
+        name = entry['username']
+        score = entry['score']
+        is_user = (entry.get("user_id") == user_id)
+        row = f"{medal} <b>{name}</b> — {score} punches" if is_user else f"{medal} {name} — {score} punches"
+        msg += row + "\n"
+
+    await context.bot.send_message(chat_id, msg, parse_mode="HTML")
+
 # === Button callbacks ===
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+    user = query.from_user
 
     if query.data == "leaderboard":
-        await query.message.reply_text("🏆 Leaderboard:\n1. Player1\n2. Player2\n3. Player3")
+        await send_leaderboard(query.message.chat_id, context, str(user.id))
     elif query.data == "info":
-        await query.message.reply_text("ℹ️ TrumpToss is a Telegram Mini App where you throw shoes at Trump and climb the leaderboard.")
+        await query.message.reply_text(
+            "ℹ️ TrumpToss is a Telegram Mini App where you throw shoes at Trump and climb the leaderboard.\n\n" +
+            "🏗 Upcoming: Airdrops, upgrades, and seasonal events."
+        )
 
 # === Error Logger ===
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
