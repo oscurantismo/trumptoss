@@ -217,7 +217,7 @@ function renderShareButton() {
             buttons: [
                 { id: "telegram", type: "default", text: "Telegram" },
                 { id: "x", type: "default", text: "X (Twitter)" },
-                { type: "cancel" }
+                { id: "whatsapp", type: "default", text: "WhatsApp" },
             ]
         }, (btnId) => {
             const links = {
