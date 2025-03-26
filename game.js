@@ -208,15 +208,55 @@ function renderShareButton() {
     btn.style.zIndex = "1001";
 
     btn.onclick = () => {
-        const gameLink = "https://t.me/TrumpToss_bot?game=trump_punch";
-        const message = `I punched ${punches} points in TrumpToss. Wanna punch to earn?\n👟 ${gameLink}`;
-        Telegram.WebApp.openTelegramLink(
-            `https://t.me/share/url?url=${encodeURIComponent(gameLink)}&text=${encodeURIComponent(message)}`
-        );
+        const botLink = "https://t.me/TrumpToss_bot";
+        const message = `I punched ${punches} points in TrumpToss. Wanna punch to earn?`;
+
+        const shareOptions = [
+            {
+                id: "telegram",
+                label: "Telegram",
+                url: `https://t.me/share/url?url=${encodeURIComponent(botLink)}&text=${encodeURIComponent(message)}`
+            },
+            {
+                id: "whatsapp",
+                label: "WhatsApp",
+                url: `https://api.whatsapp.com/send?text=${encodeURIComponent(message + ' ' + botLink)}`
+            },
+            {
+                id: "x",
+                label: "X (Twitter)",
+                url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(message + ' ' + botLink)}`
+            },
+            {
+                id: "discord",
+                label: "Discord",
+                url: `https://discord.com/channels/@me`
+            }
+        ];
+
+        const buttons = shareOptions.map(opt => ({
+            id: opt.id,
+            text: opt.label,
+            type: "default"
+        }));
+
+        buttons.push({ type: "cancel" });
+
+        Telegram.WebApp.showPopup({
+            title: "Share your score",
+            message: `Choose where to share your ${punches} punches:`,
+            buttons
+        }, (btnId) => {
+            const chosen = shareOptions.find(opt => opt.id === btnId);
+            if (chosen) {
+                window.open(chosen.url, "_blank");
+            }
+        });
     };
 
     document.body.appendChild(btn);
 }
+
 
 function renderResetButton() {
     const btn = document.createElement("button");
