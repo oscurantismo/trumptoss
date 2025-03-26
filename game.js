@@ -216,7 +216,6 @@ function renderShareButton() {
             message: `Choose where to share your ${punches} punches:`,
             buttons: [
                 { id: "telegram", type: "default", text: "Telegram" },
-                { id: "whatsapp", type: "default", text: "WhatsApp" },
                 { id: "x", type: "default", text: "X (Twitter)" },
                 { type: "cancel" }
             ]
