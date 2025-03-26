@@ -306,12 +306,17 @@ function showTab(tab, scene = null) {
         info.style.background = "#ffffff";
         info.style.fontFamily = "Arial";
         info.style.overflowY = "auto";
+        info.style.overflowX = "hidden";
+        info.style.boxSizing = "border-box";
+        info.style.maxWidth = "100%";
         info.style.zIndex = "999";
         info.innerHTML = `
             <h2>👟 TrumpToss</h2>
-            <p>Throw shoes at Trump. Earn points. Compete on the leaderboard.</p>
-            <p>🏗 <b>Upcoming:</b> Event drops, airdrops, collectibles</p>
-            <p>🤖 Powered by Telegram Mini Apps</p>
+            <p>Punch Trump with a shoe. Simple as that. From like-minded cryptonerds tired of unpredictability. 
+            <h3>What do I do?</h3>
+            <p>Punch to earn. Collect punches. Compete on the leaderboard.</p>
+            <p>🏗 <b>Upcoming:</b> Event drops, airdrops, collectibles. Stay tuned for more updates.</p>
+            <p>🤖 Powered by frustration.py</p>
         `;
         document.body.appendChild(info);
     }
