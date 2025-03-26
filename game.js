@@ -218,6 +218,39 @@ function renderShareButton() {
     document.body.appendChild(btn);
 }
 
+function renderResetButton() {
+    const btn = document.createElement("button");
+    btn.innerText = "🔁 Reset Score";
+    btn.style.position = "fixed";
+    btn.style.bottom = "110px";
+    btn.style.right = "20px";
+    btn.style.padding = "10px 14px";
+    btn.style.fontSize = "14px";
+    btn.style.background = "#dc3545";
+    btn.style.color = "#fff";
+    btn.style.border = "none";
+    btn.style.borderRadius = "8px";
+    btn.style.fontFamily = "'Arial Black', sans-serif";
+    btn.style.zIndex = "1001";
+
+    btn.onclick = () => {
+        punches = 0;
+        updatePunchDisplay();
+        localStorage.setItem(`score_${userId}`, punches);
+        trump.setTexture("trump30"); // stick with angry Trump
+        fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: storedUsername, user_id: userId, score: punches })
+        });
+    };
+
+    document.body.appendChild(btn);
+}
+
+renderResetButton();
+
+
 
 function showTab(tab, scene = null) {
     ["game-container", "leaderboard-container", "info-container"].forEach(id => {
