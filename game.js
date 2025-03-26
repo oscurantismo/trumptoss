@@ -237,7 +237,7 @@ function renderResetButton() {
         punches = 0;
         updatePunchDisplay();
         localStorage.setItem(`score_${userId}`, punches);
-        trump.setTexture("trump30"); // stick with angry Trump
+        trump.setTexture("trump27"); // stick with angry Trump
         fetch("https://trumptossleaderboard-production.up.railway.app/submit", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -302,7 +302,7 @@ function showTab(tab, scene = null) {
 }
 
 function showGameUI(scene) {
-    const current = Math.min(punches, 30);
+    const current = Math.min(punches, 27);
     const textureKey = `trump${current}`;
     if (!loadedTrumpFrames.has(textureKey)) {
         scene.load.image(textureKey, `trump-images/trump%20(${current}).webp`);
@@ -349,7 +349,7 @@ function handlePunch() {
 
     if (!hitCooldown) {
         hitCooldown = true;
-        const frameNum = Math.min(punches, 30);
+        const frameNum = Math.min(punches, 27);
         const key = `trump${frameNum}`;
         if (!loadedTrumpFrames.has(key)) {
             game.scene.scenes[0].load.image(key, `trump-images/trump%20(${frameNum}).webp`);
