@@ -16,7 +16,7 @@ from telegram.ext import (
 
 # === Config ===
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-WEB_APP_URL = "https://oscurantismo.github.io/trumptoss/"
+WEB_APP_URL = "https://oscurantismo.github.io/drumppunch2earn/"
 
 # === Logging ===
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
@@ -29,20 +29,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Show main options menu after pressing /start
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🕹 Play TrumpToss", web_app=WebAppInfo(url=WEB_APP_URL))],
+        [InlineKeyboardButton("🕹 Play Drump | Punch2Earn", web_app=WebAppInfo(url=WEB_APP_URL))],
         [InlineKeyboardButton("📊 Check Leaderboard", callback_data="leaderboard")],
         [InlineKeyboardButton("ℹ️ Info", callback_data="info")]
     ])
 
     await update.message.reply_text(
-        text="Welcome to TrumpToss! Choose an option below:",
+        text="Welcome to Drump | Punch2Earn! Choose an option below:",
         reply_markup=keyboard
     )
 
 # === Live leaderboard ===
 async def send_leaderboard(chat_id, context: ContextTypes.DEFAULT_TYPE, user_id: str):
     try:
-        res = requests.get("https://trumptossleaderboard-production.up.railway.app/leaderboard")
+        res = requests.get("https://drumppunch2earnleaderboard-production.up.railway.app/leaderboard")
         scores = res.json()
     except Exception as e:
         await context.bot.send_message(chat_id, "❌ Failed to load leaderboard. Try again later.")
@@ -53,7 +53,7 @@ async def send_leaderboard(chat_id, context: ContextTypes.DEFAULT_TYPE, user_id:
         return
 
     medals = ["🥇", "🥈", "🥉"]
-    msg = "🏆 <b>TrumpToss Leaderboard</b>\n\n"
+    msg = "🏆 <b>Drump | Punch2Earn Leaderboard</b>\n\n"
     for i, entry in enumerate(scores):
         medal = medals[i] if i < 3 else f"{i+1}."
         name = entry['username']
@@ -74,7 +74,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await send_leaderboard(query.message.chat_id, context, str(user.id))
     elif query.data == "info":
         await query.message.reply_text(
-            "ℹ️ TrumpToss is a Telegram Mini App where you throw shoes at Trump and climb the leaderboard.\n\n" +
+            "ℹ️ Drump | Punch2Earn is a Telegram Mini App where you throw shoes at Drump and climb the leaderboard.\n\n" +
             "🏗 Upcoming: Airdrops, upgrades, and seasonal events."
         )
 
@@ -96,5 +96,5 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(button_callback, pattern="^(leaderboard|info)$"))
     app.add_error_handler(error_handler)
 
-    print("🚀 TrumpToss Mini App bot is running...")
+    print("🚀 Drump | Punch2Earn Mini App bot is running...")
     app.run_polling()
